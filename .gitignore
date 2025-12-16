@@ -35,3 +35,12 @@ out/
 
 ### VS Code ###
 .vscode/
+
+# Runtime data volumes
+pg_data/
+pgadmin_data/
+ntfy/
+
+# Node modules & dist outputs
+**/node_modules/
+web-react/dist/

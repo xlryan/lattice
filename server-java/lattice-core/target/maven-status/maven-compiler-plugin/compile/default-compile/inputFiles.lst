@@ -1,0 +1,12 @@
+/Users/xiaolian/git/lesstk/lattice/server-java/lattice-core/src/main/java/com/lattice/core/repository/query/HybridSearchCriteria.java
+/Users/xiaolian/git/lesstk/lattice/server-java/lattice-core/src/main/java/com/lattice/core/config/JacksonConfig.java
+/Users/xiaolian/git/lesstk/lattice/server-java/lattice-core/src/main/java/com/lattice/core/domain/support/VectorAttributeConverter.java
+/Users/xiaolian/git/lesstk/lattice/server-java/lattice-core/src/main/java/com/lattice/core/service/NodeNormalizationService.java
+/Users/xiaolian/git/lesstk/lattice/server-java/lattice-core/src/main/java/com/lattice/core/domain/DomainType.java
+/Users/xiaolian/git/lesstk/lattice/server-java/lattice-core/src/main/java/com/lattice/core/domain/model/LatticeNode.java
+/Users/xiaolian/git/lesstk/lattice/server-java/lattice-core/src/main/java/com/lattice/core/repository/query/LatticeNodeSearchResult.java
+/Users/xiaolian/git/lesstk/lattice/server-java/lattice-core/src/main/java/com/lattice/core/repository/LatticeNodeQueryRepositoryImpl.java
+/Users/xiaolian/git/lesstk/lattice/server-java/lattice-core/src/main/java/com/lattice/core/repository/LatticeNodeRepository.java
+/Users/xiaolian/git/lesstk/lattice/server-java/lattice-core/src/main/java/com/lattice/core/repository/LatticeNodeQueryRepository.java
+/Users/xiaolian/git/lesstk/lattice/server-java/lattice-core/src/main/java/com/lattice/core/notification/NodeNotification.java
+/Users/xiaolian/git/lesstk/lattice/server-java/lattice-core/src/main/java/com/lattice/core/notification/NotificationPublisher.java

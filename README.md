@@ -62,6 +62,10 @@ So I built **Lattice**. It's not just a resume generator or a diary. It applies 
 - **RAG + Action:** Retrieve historical CSV/PDF statements (RAG) and write new expenses or alerts (Action) without context switching.
 - **中文说明:** 通过 Firefly III API，Lattice 既能“读”账本，也能“写”账本，真正成为你的数字 CFO。
 
+### 6. Instant Alerts (Ntfy Ops)
+- **Self-hosted Push:** Every ingestion event triggers an ntfy notification to your phone/desktop topic。
+- **可观测性:** 部署在 NAS 上的 ntfy 服务让你无需第三方云端即可收到数据入库、预算预警等提醒。
+
 ---
 
 ## 🏗️ Architecture / 架构
@@ -85,6 +89,7 @@ graph TD
         Agent -->|OpenAI Protocol| LLM[DeepSeek / Ollama / GPT-4]
     end
     Agent -->|Tool Calling| Firefly[(Firefly III API)]
+    Agent -->|Event Push| Ntfy[(ntfy Notifications)]
 ````
 
 ### Tech Stack
@@ -93,7 +98,7 @@ graph TD
 * **Database:** PostgreSQL 16 (with `pgvector` extension)
 * **Frontend:** Ant Design Pro (React / TypeScript)
 * **Containerization:** Docker & Docker Compose
-* **Finance Tooling:** Firefly III (self-hosted) + Spring AI Function Callback
+* **Finance Tooling:** Firefly III (self-hosted) + Spring AI Function Callback + ntfy 推送
 
 -----
 
@@ -110,24 +115,29 @@ graph TD
 1.  **Clone the repo**
 
     ```bash
-    git clone [https://github.com/xlryan/lattice.git](https://github.com/xlryan/lattice.git)
+    git clone https://github.com/xlryan/lattice.git
     cd lattice
     ```
 
-2.  **Configure Environment**
-    Copy the example config and add your API key / Firefly token.
+2.  **Export secrets (shell or CI)**
 
     ```bash
-    cp .env.example .env
-    # Edit .env and set SPRING_AI_OPENAI_API_KEY=sk-xxxxxx
-    # Optionally set FIREFLY_API_TOKEN=personal-access-token
+    export DEEPSEEK_API_KEY=sk-your-key
+    export FIREFLY_API_TOKEN=personal-access-token   # optional
     ```
 
-3.  **Start up**
+3.  **One-click deploy**
 
     ```bash
-    docker-compose up -d
+    ./scripts/deploy.sh
     ```
+
+    Services:
+    - Frontend (Ant Design Pro) → http://localhost:4173
+    - Backend API → http://localhost:8080
+    - PostgreSQL Vector DB → localhost:25432
+    - PgAdmin → http://localhost:25050
+    - ntfy Push Console → http://localhost:25862
 
 4.  **Access**
 

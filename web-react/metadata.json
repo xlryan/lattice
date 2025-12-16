@@ -1,0 +1,5 @@
+{
+  "name": "Lattice (晶格)",
+  "description": "A personal life management system based on Spring Boot + Spring AI. Features a Geek-style dark mode UI with data governance and AI chat capabilities.",
+  "requestFramePermissions": []
+}

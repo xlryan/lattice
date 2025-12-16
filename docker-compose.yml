@@ -1,0 +1,100 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: grain-postgres
+    restart: always
+    environment:
+      POSTGRES_USER: grain_user
+      POSTGRES_PASSWORD: grain_password
+      POSTGRES_DB: grain_log
+    ports:
+      - "25432:5432"
+    volumes:
+      - ./pg_data:/var/lib/postgresql/data
+      - ./sql/init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - grain-net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U grain_user -d grain_log"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  pgadmin:
+    image: dpage/pgadmin4
+    container_name: grain-pgadmin
+    restart: always
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@grain.com
+      PGADMIN_DEFAULT_PASSWORD: admin
+    ports:
+      - "25050:80"
+    volumes:
+      - ./pgadmin_data:/var/lib/pgadmin
+    depends_on:
+      - postgres
+    networks:
+      - grain-net
+
+  ntfy:
+    image: binwiederhier/ntfy
+    container_name: lattice-ntfy
+    restart: unless-stopped
+    command: ["serve"]
+    environment:
+      NTFY_BASE_URL: http://ntfy
+    ports:
+      - "25862:80"
+    volumes:
+      - ./ntfy/cache:/var/cache/ntfy
+      - ./ntfy/etc:/etc/ntfy
+    networks:
+      - grain-net
+
+  backend:
+    build:
+      context: ./server-java
+      dockerfile: Dockerfile
+    container_name: lattice-backend
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      ntfy:
+        condition: service_started
+    environment:
+      LATTICE_DB_HOST: postgres
+      LATTICE_DB_PORT: 5432
+      LATTICE_DB_NAME: grain_log
+      LATTICE_DB_USER: grain_user
+      LATTICE_DB_PASSWORD: grain_password
+      LATTICE_WEB_CORS_ALLOWED_ORIGINS: http://localhost:4173
+      DEEPSEEK_API_KEY: ${DEEPSEEK_API_KEY:-change-me}
+      FIREFLY_API_TOKEN: ${FIREFLY_API_TOKEN:-change-me}
+      LATTICE_FINANCE_FIREFLY_BASE_URL: http://firefly:8080
+      LATTICE_NOTIFICATIONS_NTFY_BASE_URL: http://ntfy
+      LATTICE_NOTIFICATIONS_NTFY_TOPIC: lattice-events
+      LATTICE_NOTIFICATIONS_NTFY_ENABLED: "true"
+    ports:
+      - "8080:8080"
+    networks:
+      - grain-net
+
+  frontend:
+    build:
+      context: ./web-react
+      dockerfile: Dockerfile
+    container_name: lattice-frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+    ports:
+      - "4173:80"
+    networks:
+      - grain-net
+
+networks:
+  grain-net:
+    driver: bridge
