@@ -1,0 +1,7 @@
+spring:
+  application:
+    name: lattice-pro
+
+lattice:
+  license:
+    key: ${LATTICE_LICENSE_KEY:}
