@@ -5,7 +5,7 @@ create extension if not exists vector;
 
 create table if not exists lattice_nodes (
     id            uuid primary key,
-    domain        text not null check (domain in ('CAREER','DIY','MUSIC','LIFE','FINANCE')),
+    domain        text not null check (domain in ('CAREER','WEALTH','BUILD','KNOWLEDGE','INTEL','INBOX')),
     title         text not null,
     content       text not null,
     properties    jsonb not null,

@@ -22,9 +22,11 @@ public class JsonSchemaMetadataWorkflow implements MetadataExtractionWorkflow {
 
     private static final Map<DomainType, String> SCHEMAS = Map.of(
             DomainType.CAREER, "{situation, task, action, result, skills}",
-            DomainType.DIY, "{materials[], cost, tools, notes, constraints}",
-            DomainType.MUSIC, "{key, tempo_bpm, motif, chords[], mood[]}",
-            DomainType.FINANCE, "{booked_at, amount, currency, category, source_account, notes}"
+            DomainType.WEALTH, "{booked_at, amount, currency, category, source_account, notes}",
+            DomainType.BUILD, "{materials[], cost, tools, bom_reference, notes}",
+            DomainType.KNOWLEDGE, "{topics[], summary, references[], source_url}",
+            DomainType.INTEL, "{source, summary, risk_level, recommended_action}",
+            DomainType.INBOX, "{raw_hint, recommended_domain, urgency}"
     );
 
     private final ChatClient chatClient;

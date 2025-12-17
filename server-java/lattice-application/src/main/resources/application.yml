@@ -1,6 +1,9 @@
 spring:
   application:
     name: lattice
+  threads:
+    virtual:
+      enabled: true
   datasource:
     url: jdbc:postgresql://${LATTICE_DB_HOST:postgres}:${LATTICE_DB_PORT:5432}/${LATTICE_DB_NAME:grain_log}
     username: ${LATTICE_DB_USER:grain_user}
@@ -48,7 +51,7 @@ lattice:
     embedding:
       base-url: https://api.deepseek.com/v1
       model: text-embedding-3-large
-  finance:
+  wealth:
     firefly:
       base-url: ${FIREFLY_BASE_URL:http://firefly:8080}
       token: ${FIREFLY_API_TOKEN:change-me}
@@ -57,7 +60,7 @@ lattice:
       default-category: 其他
       currency: CNY
       category-mappings:
-        diy: DIY/装修
+        build: DIY/装修
         dining: 餐饮
   notifications:
     ntfy:
@@ -66,6 +69,26 @@ lattice:
       topic: ${NTFY_TOPIC:lattice-events}
       title: ${NTFY_TITLE:Lattice 新节点}
       priority: ${NTFY_PRIORITY:3}
+  python-worker:
+    base-url: ${PY_WORKER_BASE_URL:http://python-worker:8081}
+  security:
+    jwt:
+      secret: ${LATTICE_JWT_SECRET:lattice-secret-please-change}
+      issuer: lattice
+      expiry-seconds: 86400
+  prompts:
+    templates:
+      career.star:
+        description: STAR formatter for career logs
+        content: |-
+          你是一位技术写作者，请将以下内容转为 STAR JSON（situation, task, action, result）。
+          要求：中文输出，字段完整且扼要。
+          文本: {text}
+      inbox.auto-classify:
+        description: Inbox triage classifier
+        content: |-
+          根据输入内容，判断属于 CAREER/WEALTH/BUILD/KNOWLEDGE/INTEL/INBOX，并解释原因。
+          输出 JSON: {"domain":"CAREER","reason":"..."}
   web:
     cors:
       allowed-origins: ${LATTICE_CORS_ORIGINS:http://localhost:3000,http://localhost:4173}
@@ -75,8 +98,18 @@ management:
   endpoints:
     web:
       exposure:
-        include: health,info
+        include: health,info,metrics,prometheus
   endpoint:
     health:
       probes:
         enabled: true
+  metrics:
+    tags:
+      application: lattice-core
+  tracing:
+    sampling:
+      probability: 1.0
+
+logging:
+  pattern:
+    level: "%5p [traceId=%X{traceId} spanId=%X{spanId}]"

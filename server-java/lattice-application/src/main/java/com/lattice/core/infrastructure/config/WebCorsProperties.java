@@ -1,4 +1,4 @@
-package com.lattice.app.config;
+package com.lattice.core.infrastructure.config;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
@@ -7,7 +7,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 /**
- * CORS 相关配置，支持多来源自定义。
+ * CORS configuration holder.
  */
 @ConfigurationProperties(prefix = "lattice.web.cors")
 public class WebCorsProperties {

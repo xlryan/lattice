@@ -6,12 +6,18 @@ import { LatticeChat } from './pages/LatticeChat';
 import { SearchPage } from './pages/Search';
 import { FinancePage } from './pages/Finance';
 import { DiyProjects } from './pages/DiyProjects';
+import { WealthDashboard } from './pages/WealthDashboard';
+import { CareerIngestPage } from './pages/CareerIngest';
+import { LoginPage } from './pages/Login';
 import { PageView } from './types';
 import { Menu, Terminal } from 'lucide-react';
+import { Button } from 'antd';
+import { useAuth } from './contexts/AuthContext';
 
 const App: React.FC = () => {
   const [currentPage, setCurrentPage] = useState<PageView>('dashboard');
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const { isAuthenticated, logout } = useAuth();
 
   const renderPage = () => {
     switch (currentPage) {
@@ -25,6 +31,10 @@ const App: React.FC = () => {
         return <CareerNodes />;
       case 'finance':
         return <FinancePage />;
+      case 'wealth':
+        return <WealthDashboard />;
+      case 'careerIngest':
+        return <CareerIngestPage />;
       case 'diy':
         return <DiyProjects />;
       default:
@@ -37,6 +47,10 @@ const App: React.FC = () => {
         );
     }
   };
+
+  if (!isAuthenticated) {
+    return <LoginPage />;
+  }
 
   return (
     <div className="flex h-screen w-full overflow-hidden bg-background text-slate-200 font-sans">
@@ -64,6 +78,7 @@ const App: React.FC = () => {
           <div className="flex items-center gap-4">
             <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse"></div>
             <span className="text-xs font-mono text-emerald-500">系统在线</span>
+            <Button size="small" onClick={logout}>退出</Button>
           </div>
         </header>
 

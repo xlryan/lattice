@@ -21,7 +21,7 @@ public class NodeNormalizationService {
      */
     public JsonNode normalize(DomainType domainType, JsonNode source) {
         ObjectNode target = source.deepCopy();
-        if (domainType == DomainType.DIY && source.has("cost")) {
+        if (domainType == DomainType.BUILD && source.has("cost")) {
             double standardized = source.path("cost").asDouble(0.0d);
             target.put("cost", standardized);
         }

@@ -1,10 +1,10 @@
-package com.lattice.app;
+package com.lattice.core;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 
 @SpringBootTest
-class LatticeApplicationTests {
+class LatticeCoreApplicationTests {
 
     @Test
     void contextLoads() {

@@ -23,7 +23,7 @@ import java.util.Map;
 public class AiDomainClassifier implements DomainClassifier {
 
     private static final String TEMPLATE = """
-            你是一位分类器，请将用户输入划分到 CAREER/DIY/MUSIC/LIFE/FINANCE 之一。
+            你是一位分类器，请将用户输入划分到 CAREER/WEALTH/BUILD/KNOWLEDGE/INTEL/INBOX 之一。
             输出 JSON: {\"domain\": string, \"confidence\": 0-1}.
             文本: {input}
             """;

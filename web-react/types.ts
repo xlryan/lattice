@@ -44,4 +44,4 @@ export interface DiyProject {
   deadline: string;
 }
 
-export type PageView = 'dashboard' | 'search' | 'chat' | 'career' | 'diy' | 'finance' | 'settings';
+export type PageView = 'dashboard' | 'search' | 'chat' | 'career' | 'diy' | 'finance' | 'settings' | 'wealth' | 'careerIngest';

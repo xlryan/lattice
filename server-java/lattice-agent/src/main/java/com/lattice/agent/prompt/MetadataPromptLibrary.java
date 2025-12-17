@@ -11,8 +11,11 @@ public final class MetadataPromptLibrary {
 
     private static final Map<DomainType, String> PROMPTS = Map.of(
             DomainType.CAREER, "输出 STAR 模板 JSON",
-            DomainType.DIY, "输出材料/成本 JSON",
-            DomainType.MUSIC, "输出和弦/动机 JSON"
+            DomainType.WEALTH, "输出财务记账 JSON",
+            DomainType.BUILD, "输出 BOM/物料 JSON",
+            DomainType.KNOWLEDGE, "输出知识笔记 JSON",
+            DomainType.INTEL, "输出情报摘要 JSON",
+            DomainType.INBOX, "输出简要分类建议 JSON"
     );
 
     private MetadataPromptLibrary() {

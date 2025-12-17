@@ -1,8 +1,14 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Send, User, Bot, StopCircle } from 'lucide-react';
+import { fetchEventSource } from '@microsoft/fetch-event-source';
+import ReactMarkdown from 'react-markdown';
+import { message as antdMessage } from 'antd';
 import { ChatMessage } from '../types';
+import { useAuth } from '../contexts/AuthContext';
+import { TOKEN_KEY } from '../requestConfig';
 
 export const LatticeChat: React.FC = () => {
+  const { token } = useAuth();
   const [messages, setMessages] = useState<ChatMessage[]>([
     { id: '1', role: 'assistant', content: '你好。我是 Lattice AI。今天我能帮你分析哪些人生数据？', timestamp: Date.now() }
   ]);
@@ -33,18 +39,31 @@ export const LatticeChat: React.FC = () => {
     abortControllerRef.current = new AbortController();
 
     try {
-      // Mock streaming for Chinese demo
-      const mockResponse = "我已经分析了你的职业节点。看起来你在 **向量数据库** 方面的知识图谱存在缺口。考虑到你拥有 Spring Boot 背景，我建议你探索 `pgvector` 或 `Pinecone` 的集成。\n\n需要我为你创建一个学习任务吗？";
-      // Split into characters for Chinese typing effect
-      const chars = mockResponse.split('');
-      
-      for (let i = 0; i < chars.length; i++) {
-        await new Promise(resolve => setTimeout(resolve, 30)); // Faster typing for Chinese
-        
-        setMessages(prev => prev.map(msg => 
-          msg.id === assistantMsgId ? { ...msg, content: msg.content + chars[i] } : msg
-        ));
-      }
+      const controller = new AbortController();
+      abortControllerRef.current = controller;
+      const formData = new FormData();
+      formData.append('message', input);
+      await fetchEventSource('/api/chat/stream', {
+        method: 'POST',
+        body: formData,
+        headers: {
+          Authorization: token ? `Bearer ${token}` : '',
+        },
+        signal: controller.signal,
+        async onmessage(event) {
+          if (event.data) {
+            setMessages(prev => prev.map(msg =>
+              msg.id === assistantMsgId ? { ...msg, content: msg.content + event.data } : msg
+            ));
+          }
+        },
+        onerror(err) {
+          antdMessage.error('对话连接中断');
+          controller.abort();
+          setIsStreaming(false);
+          throw err;
+        },
+      });
 
     } catch (error: any) {
       if (error.name !== 'AbortError') {
@@ -77,7 +96,7 @@ export const LatticeChat: React.FC = () => {
             </div>
             <div className={`max-w-[80%] p-3 rounded-lg text-sm leading-relaxed ${msg.role === 'user' ? 'bg-slate-700 text-slate-100' : 'bg-slate-900/50 text-slate-200 border border-slate-700'}`}>
               {msg.content ? (
-                <div className="whitespace-pre-wrap font-mono text-sm">{msg.content}</div>
+                msg.role === 'assistant' ? <ReactMarkdown>{msg.content}</ReactMarkdown> : <div className="whitespace-pre-wrap font-mono text-sm">{msg.content}</div>
               ) : (
                 <span className="animate-pulse">_</span>
               )}

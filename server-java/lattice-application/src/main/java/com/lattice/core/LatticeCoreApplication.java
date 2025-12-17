@@ -1,17 +1,17 @@
-package com.lattice.app;
+package com.lattice.core;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.context.properties.ConfigurationPropertiesScan;
 
 /**
- * Monolith 入口，扫描所有模块包路径。
+ * Lattice Core monolith entry point.
  */
 @SpringBootApplication(scanBasePackages = "com.lattice")
 @ConfigurationPropertiesScan(basePackages = "com.lattice")
-public class LatticeApplication {
+public class LatticeCoreApplication {
 
     public static void main(String[] args) {
-        SpringApplication.run(LatticeApplication.class, args);
+        SpringApplication.run(LatticeCoreApplication.class, args);
     }
 }

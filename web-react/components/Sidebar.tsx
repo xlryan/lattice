@@ -37,6 +37,13 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentPage, onNavigate }) => 
         { id: 'career', label: '职业生涯 (Career)', icon: Briefcase },
         { id: 'diy', label: '手工项目 (Projects)', icon: Hammer },
         { id: 'finance', label: '财务账单 (Finance)', icon: DollarSign },
+        { id: 'wealth', label: '财富仪表盘 (Wealth)', icon: LayoutDashboard },
+      ]
+    },
+    {
+      title: '数据导入',
+      items: [
+        { id: 'careerIngest', label: '简历上传', icon: Briefcase },
       ]
     },
     {

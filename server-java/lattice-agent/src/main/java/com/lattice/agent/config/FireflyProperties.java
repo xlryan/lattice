@@ -8,7 +8,7 @@ import java.util.Map;
 /**
  * Firefly III API 访问配置，集中管理 baseUrl、token 以及默认账户映射。
  */
-@ConfigurationProperties(prefix = "lattice.finance.firefly")
+@ConfigurationProperties(prefix = "lattice.wealth.firefly")
 public class FireflyProperties {
 
     private String baseUrl;
