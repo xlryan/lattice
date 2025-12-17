@@ -29,11 +29,23 @@ lattice
 │       ├── api                         // SearchRequest/Response DTO
 │       ├── filter                      // FilterExpression 语法树
 │       └── service                     // RetrievalService 与向量算分
-└── lattice-agent                       # Agent：AI 应用与工具链
-    └── src/main/java/com/lattice/agent
-        ├── prompt                      // few-shot、JsonSchema 定义
-        ├── client                      // Spring AI（DeepSeek/Ollama）
-        └── task                        // RAG Workflow、工具插件
+├── lattice-agent                       # Agent：AI 应用与工具链
+│    └── src/main/java/com/lattice/agent
+│        ├── prompt                      // few-shot、JsonSchema 定义
+│        ├── client                      // Spring AI（DeepSeek/Ollama）
+│        └── task                        // RAG Workflow、工具插件
+└── lattice-python-engine               # Python 计算服务 (FastAPI)
+    ├── Dockerfile                      # 独立镜像构建文件
+    ├── requirements.txt                # Python 依赖 (FastAPI, PyMuPDF, Torch)
+    └── src
+        ├── main.py                     # 服务入口 (暴露 HTTP 端口 8000)
+        ├── api
+        │   └── v1
+        │       ├── ingestion.py        # 接口: 供 lattice-ingestion 调用 (复杂解析)
+        │       └── retrieval.py        # 接口: 供 lattice-retrieval 调用 (重排序)
+        └── core
+            ├── parser.py               # 逻辑: PDF/Excel 深度解析实现
+            └── reranker.py             # 逻辑: BGE/Cross-Encoder 模型推理
 ```
 
 > 说明：多模块仍然由 `lattice-application` 统一打包运行，模块之间通过 Spring Bean 导出接口，不共享实现细节。
