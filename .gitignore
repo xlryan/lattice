@@ -44,3 +44,4 @@ ntfy/
 # Node modules & dist outputs
 **/node_modules/
 web-react/dist/
+/lattice-pro/
