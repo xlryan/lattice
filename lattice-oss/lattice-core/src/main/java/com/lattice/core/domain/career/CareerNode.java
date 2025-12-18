@@ -1,10 +1,8 @@
 package com.lattice.core.domain.career;
 
-import com.lattice.core.domain.support.DoubleVectorConverter;
 import com.lattice.core.tenancy.BaseTenantEntity;
-import com.vladmihalcea.hibernate.type.array.ListArrayType;
+import com.lattice.core.infrastructure.persistence.VectorType;
 import jakarta.persistence.Column;
-import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -12,9 +10,11 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.annotations.Type;
 import org.hibernate.type.SqlTypes;
 
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -23,7 +23,7 @@ import java.util.UUID;
  * Career 域的原子节点，承载 STAR 结构和语义向量。
  */
 @Entity
-@Table(name = "lattice_career_nodes")
+@Table(name = "lattice_career_nodes", schema = "lattice")
 public class CareerNode extends BaseTenantEntity {
 
     @Id
@@ -40,13 +40,13 @@ public class CareerNode extends BaseTenantEntity {
     @Column(name = "structured_data", nullable = false, columnDefinition = "jsonb")
     private Map<String, Object> structuredData;
 
-    @Convert(converter = DoubleVectorConverter.class)
+    @Type(VectorType.class)
     @Column(name = "embedding", nullable = false, columnDefinition = "vector(1536)")
     private List<Double> embedding;
 
-    @org.hibernate.annotations.Type(ListArrayType.class)
+    @JdbcTypeCode(SqlTypes.ARRAY)
     @Column(name = "tags", columnDefinition = "text[]")
-    private List<String> tags;
+    private List<String> tags = new ArrayList<>();
 
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
@@ -102,7 +102,7 @@ public class CareerNode extends BaseTenantEntity {
         private String rawContent;
         private Map<String, Object> structuredData;
         private List<Double> embedding;
-        private List<String> tags;
+        private List<String> tags = new ArrayList<>();
 
         private Builder() {
         }

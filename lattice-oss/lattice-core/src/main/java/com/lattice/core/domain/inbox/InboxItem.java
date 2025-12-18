@@ -1,6 +1,7 @@
 package com.lattice.core.domain.inbox;
 
 import com.lattice.core.domain.DomainType;
+import com.lattice.core.tenancy.BaseTenantEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -19,8 +20,8 @@ import java.util.UUID;
  * Inbox buffer for unclassified inputs awaiting enrichment.
  */
 @Entity
-@Table(name = "lattice_inbox_items")
-public class InboxItem {
+@Table(name = "lattice_inbox_items", schema = "lattice")
+public class InboxItem extends BaseTenantEntity {
 
     public enum InboxStatus {
         RECEIVED,

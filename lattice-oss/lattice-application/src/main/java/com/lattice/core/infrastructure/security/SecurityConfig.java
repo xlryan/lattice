@@ -63,8 +63,8 @@ public class SecurityConfig {
         return Pbkdf2PasswordEncoder.defaultsForSpringSecurity_v5_8();
     }
 
-    @Bean
-    public AuthenticationManager authenticationManager(List<AuthenticationProvider> providers) {
-        return new ProviderManager(providers);
-    }
+//    @Bean
+//    public AuthenticationManager authenticationManager(List<AuthenticationProvider> providers) {
+//        return new ProviderManager(providers);
+//    }
 }

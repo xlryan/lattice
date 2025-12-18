@@ -1,0 +1,7 @@
+rootProject.name = 'lattice-oss'
+
+include 'lattice-core'
+include 'lattice-ingestion'
+include 'lattice-retrieval'
+include 'lattice-agent'
+include 'lattice-application'

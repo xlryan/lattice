@@ -1,9 +1,8 @@
 package com.lattice.core.domain.knowledge;
 
-import com.lattice.core.domain.support.DoubleVectorConverter;
-import com.vladmihalcea.hibernate.type.array.ListArrayType;
+import com.lattice.core.infrastructure.persistence.VectorType;
+import com.lattice.core.tenancy.BaseTenantEntity;
 import jakarta.persistence.Column;
-import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
@@ -13,6 +12,7 @@ import org.hibernate.annotations.Type;
 import org.hibernate.type.SqlTypes;
 
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -21,8 +21,8 @@ import java.util.UUID;
  * Knowledge base note that participates in hybrid retrieval.
  */
 @Entity
-@Table(name = "lattice_knowledge_notes")
-public class KnowledgeNote {
+@Table(name = "lattice_knowledge_notes", schema = "lattice")
+public class KnowledgeNote extends BaseTenantEntity {
 
     @Id
     private UUID id;
@@ -37,13 +37,13 @@ public class KnowledgeNote {
     @Column(name = "metadata", nullable = false, columnDefinition = "jsonb")
     private Map<String, Object> metadata;
 
-    @Convert(converter = DoubleVectorConverter.class)
+    @Type(VectorType.class)
     @Column(name = "embedding", columnDefinition = "vector(1536)")
     private List<Double> embedding;
 
-    @Type(ListArrayType.class)
+    @JdbcTypeCode(SqlTypes.ARRAY)
     @Column(name = "tags", columnDefinition = "text[]")
-    private List<String> tags;
+    private List<String> tags = new ArrayList<>();
 
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
@@ -99,7 +99,7 @@ public class KnowledgeNote {
         private String content;
         private Map<String, Object> metadata = Map.of();
         private List<Double> embedding;
-        private List<String> tags;
+        private List<String> tags = new ArrayList<>();
 
         public Builder title(String title) {
             this.title = title;

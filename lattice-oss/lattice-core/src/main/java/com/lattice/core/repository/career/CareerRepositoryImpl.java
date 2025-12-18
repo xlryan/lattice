@@ -2,10 +2,10 @@ package com.lattice.core.repository.career;
 
 import com.lattice.core.domain.career.CareerNode;
 import com.lattice.core.domain.support.DoubleVectorConverter;
+import com.pgvector.PGvector;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import jakarta.persistence.Query;
-import org.postgresql.util.PGobject;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -20,9 +20,9 @@ public class CareerRepositoryImpl implements CareerRepositoryCustom {
 
     @Override
     public List<CareerNode> semanticSearch(List<Double> queryEmbedding, int limit) {
-        String sql = "select * from lattice_career_nodes order by embedding <=> :query_embedding";
+        String sql = "select * from lattice.lattice_career_nodes order by embedding <=> :query_embedding";
         Query query = entityManager.createNativeQuery(sql, CareerNode.class);
-        PGobject vector = converter.convertToDatabaseColumn(queryEmbedding);
+        PGvector vector = converter.convertToDatabaseColumn(queryEmbedding);
         if (vector == null) {
             throw new IllegalArgumentException("查询向量不能为空");
         }

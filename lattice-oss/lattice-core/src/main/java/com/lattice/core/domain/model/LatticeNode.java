@@ -3,8 +3,7 @@ package com.lattice.core.domain.model;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.lattice.core.domain.DomainType;
 import com.lattice.core.domain.support.VectorAttributeConverter;
-import com.vladmihalcea.hibernate.type.array.ListArrayType;
-import com.vladmihalcea.hibernate.type.json.JsonBinaryType;
+import com.lattice.core.tenancy.BaseTenantEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;
@@ -19,11 +18,14 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import lombok.experimental.SuperBuilder;
 import org.hibernate.annotations.CreationTimestamp;
-import org.hibernate.annotations.Type;
+import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.annotations.UpdateTimestamp;
+import org.hibernate.type.SqlTypes;
 
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -31,13 +33,13 @@ import java.util.UUID;
  * Lattice 的最小知识单元，融合文本、JSON 元数据与语义向量。
  */
 @Entity
-@Table(name = "lattice_nodes")
+@Table(name = "lattice_nodes", schema = "lattice")
 @Getter
 @Setter
-@Builder
+@SuperBuilder
 @NoArgsConstructor
 @AllArgsConstructor
-public class LatticeNode {
+public class LatticeNode extends BaseTenantEntity {
 
     @Id
     private UUID id;
@@ -54,17 +56,19 @@ public class LatticeNode {
     @Column(name = "content", nullable = false, columnDefinition = "text")
     private String content;
 
-    @Type(JsonBinaryType.class)
+    @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "properties", nullable = false, columnDefinition = "jsonb")
     private JsonNode properties;
 
     @Convert(converter = VectorAttributeConverter.class)
+    @JdbcTypeCode(SqlTypes.VARCHAR)
     @Column(name = "embedding", columnDefinition = "vector(1536)")
     private float[] embedding;
 
-    @Type(ListArrayType.class)
+    @JdbcTypeCode(SqlTypes.ARRAY)
     @Column(name = "tags", columnDefinition = "text[]")
-    private List<String> tags;
+    @Builder.Default
+    private List<String> tags = new ArrayList<>();
 
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)

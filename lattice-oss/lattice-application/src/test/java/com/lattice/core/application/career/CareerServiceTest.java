@@ -26,7 +26,6 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
 @SpringBootTest(classes = CareerService.class)
-@Import(BeanOutputConverter.class)
 class CareerServiceTest {
 
     @MockBean

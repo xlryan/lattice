@@ -1,9 +1,8 @@
 package com.lattice.core.domain.intel;
 
-import com.lattice.core.domain.support.DoubleVectorConverter;
-import com.vladmihalcea.hibernate.type.array.ListArrayType;
+import com.lattice.core.infrastructure.persistence.VectorType;
+import com.lattice.core.tenancy.BaseTenantEntity;
 import jakarta.persistence.Column;
-import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -15,6 +14,7 @@ import org.hibernate.annotations.Type;
 import org.hibernate.type.SqlTypes;
 
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -23,8 +23,8 @@ import java.util.UUID;
  * External intelligence signal (RSS/news/insight) persisted for monitoring.
  */
 @Entity
-@Table(name = "lattice_intel_signals")
-public class IntelSignal {
+@Table(name = "lattice_intel_signals", schema = "lattice")
+public class IntelSignal extends BaseTenantEntity {
 
     public enum SignalImportance {
         LOW,
@@ -53,13 +53,13 @@ public class IntelSignal {
     @Column(name = "importance", nullable = false, length = 16)
     private SignalImportance importance;
 
-    @Convert(converter = DoubleVectorConverter.class)
+    @Type(VectorType.class)
     @Column(name = "embedding", columnDefinition = "vector(1536)")
     private List<Double> embedding;
 
-    @Type(ListArrayType.class)
+    @JdbcTypeCode(SqlTypes.ARRAY)
     @Column(name = "tags", columnDefinition = "text[]")
-    private List<String> tags;
+    private List<String> tags = new ArrayList<>();
 
     @CreationTimestamp
     @Column(name = "captured_at", nullable = false, updatable = false)
@@ -127,7 +127,7 @@ public class IntelSignal {
         private Map<String, Object> insight = Map.of();
         private SignalImportance importance = SignalImportance.MEDIUM;
         private List<Double> embedding;
-        private List<String> tags;
+        private List<String> tags = new ArrayList<>();
 
         public Builder source(String source) {
             this.source = source;

@@ -1,0 +1,15 @@
+plugins {
+    id 'java-library'
+}
+
+dependencies {
+    implementation project(':lattice-core')
+    implementation project(':lattice-retrieval')
+    implementation 'org.springframework.boot:spring-boot-starter'
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+    implementation 'org.springframework.ai:spring-ai-starter-model-openai'
+    implementation 'org.springframework.ai:spring-ai-starter-model-ollama'
+
+    compileOnly 'org.projectlombok:lombok'
+    annotationProcessor 'org.projectlombok:lombok'
+}

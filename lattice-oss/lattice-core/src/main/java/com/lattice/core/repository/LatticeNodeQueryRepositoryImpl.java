@@ -3,10 +3,10 @@ package com.lattice.core.repository;
 import com.lattice.core.domain.support.VectorAttributeConverter;
 import com.lattice.core.repository.query.HybridSearchCriteria;
 import com.lattice.core.repository.query.LatticeNodeSearchResult;
+import com.pgvector.PGvector;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import jakarta.persistence.Query;
-import org.postgresql.util.PGobject;
 import org.springframework.stereotype.Repository;
 
 import java.util.ArrayList;
@@ -31,7 +31,7 @@ public class LatticeNodeQueryRepositoryImpl implements LatticeNodeQueryRepositor
                 .append("select id, title, substring(content, 1, 360) as snippet, ")
                 .append("       (0.7 * (1 - (embedding <=> :query_embedding)) + ")
                 .append("        0.3 * coalesce((properties->>'score')::double precision, 0)) as score ")
-                .append("from lattice_nodes where domain = :domain");
+                .append("from lattice.lattice_nodes where domain = :domain");
         if (criteria.filterExpression() != null && !criteria.filterExpression().isBlank()) {
             sql.append(" and (").append(criteria.filterExpression()).append(")");
         }
@@ -40,7 +40,7 @@ public class LatticeNodeQueryRepositoryImpl implements LatticeNodeQueryRepositor
         Query query = entityManager.createNativeQuery(sql.toString());
         query.setParameter("domain", criteria.domain().name());
         query.setParameter("limit", criteria.limit());
-        PGobject vector = converter.convertToDatabaseColumn(criteria.queryEmbedding());
+        PGvector vector = converter.convertToDatabaseColumn(criteria.queryEmbedding());
         if (vector == null) {
             throw new IllegalArgumentException("查询向量不能为空");
         }

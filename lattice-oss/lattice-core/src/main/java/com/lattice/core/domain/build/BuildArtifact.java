@@ -1,9 +1,8 @@
 package com.lattice.core.domain.build;
 
-import com.lattice.core.domain.support.DoubleVectorConverter;
-import com.vladmihalcea.hibernate.type.array.ListArrayType;
+import com.lattice.core.infrastructure.persistence.VectorType;
+import com.lattice.core.tenancy.BaseTenantEntity;
 import jakarta.persistence.Column;
-import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -15,6 +14,7 @@ import org.hibernate.annotations.Type;
 import org.hibernate.type.SqlTypes;
 
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -23,8 +23,8 @@ import java.util.UUID;
  * Represents an artifact or inspiration within the BUILD domain.
  */
 @Entity
-@Table(name = "lattice_build_artifacts")
-public class BuildArtifact {
+@Table(name = "lattice_build_artifacts", schema = "lattice")
+public class BuildArtifact extends BaseTenantEntity {
 
     public enum ArtifactCategory {
         PROJECT,
@@ -49,13 +49,13 @@ public class BuildArtifact {
     @Column(name = "attributes", nullable = false, columnDefinition = "jsonb")
     private Map<String, Object> attributes;
 
-    @Convert(converter = DoubleVectorConverter.class)
+    @Type(VectorType.class)
     @Column(name = "embedding", columnDefinition = "vector(1536)")
     private List<Double> embedding;
 
-    @Type(ListArrayType.class)
+    @JdbcTypeCode(SqlTypes.ARRAY)
     @Column(name = "tags", columnDefinition = "text[]")
-    private List<String> tags;
+    private List<String> tags = new ArrayList<>();
 
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
@@ -117,7 +117,7 @@ public class BuildArtifact {
         private String description;
         private Map<String, Object> attributes = Map.of();
         private List<Double> embedding;
-        private List<String> tags;
+        private List<String> tags = new ArrayList<>();
 
         public Builder category(ArtifactCategory category) {
             this.category = category;

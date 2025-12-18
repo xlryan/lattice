@@ -1,11 +1,20 @@
 spring:
   application:
     name: lattice
+  autoconfigure:
+    exclude:
+      - org.springframework.ai.model.ollama.autoconfigure.OllamaChatAutoConfiguration
+      - org.springframework.ai.model.ollama.autoconfigure.OllamaEmbeddingAutoConfiguration
+      - org.springframework.ai.model.openai.autoconfigure.OpenAiChatAutoConfiguration
+      - org.springframework.ai.model.openai.autoconfigure.OpenAiAudioSpeechAutoConfiguration
+      - org.springframework.ai.model.openai.autoconfigure.OpenAiAudioTranscriptionAutoConfiguration
+      - org.springframework.ai.model.openai.autoconfigure.OpenAiImageAutoConfiguration
+      - org.springframework.ai.model.openai.autoconfigure.OpenAiModerationAutoConfiguration
   threads:
     virtual:
       enabled: true
   datasource:
-    url: jdbc:postgresql://${LATTICE_DB_HOST:postgres}:${LATTICE_DB_PORT:5432}/${LATTICE_DB_NAME:grain_log}
+    url: jdbc:postgresql://${LATTICE_DB_HOST:192.168.0.111}:${LATTICE_DB_PORT:25432}/${LATTICE_DB_NAME:lattice}
     username: ${LATTICE_DB_USER:grain_user}
     password: ${LATTICE_DB_PASSWORD:grain_password}
     driver-class-name: org.postgresql.Driver
@@ -20,7 +29,6 @@ spring:
       hibernate:
         format_sql: true
         jdbc.lob.non_contextual_creation: true
-        default_schema: lattice
   flyway:
     enabled: true
     locations: classpath:db/migration
@@ -28,16 +36,19 @@ spring:
     default-schema: lattice
     schemas: lattice
   ai:
+    deepseek:
+      api-key: ${DEEPSEEK_API_KEY:dummy-deepseek-key}
     openai:
-      api-key: ${DEEPSEEK_API_KEY:change-me}
-      base-url: https://api.deepseek.com/v1
+      api-key: ${OPENAI_API_KEY:dummy-openai-key}
+    ollama:
+      base-url: ${OLLAMA_BASE_URL:http://localhost:11434}
       chat:
         options:
-          model: deepseek-chat
+          model: gpt-oss:20b
           temperature: 0.1
       embedding:
         options:
-          model: text-embedding-3-large
+          model: gpt-oss:20b
     vectorstore:
       pgvector:
         initialize-schema: false
@@ -46,11 +57,11 @@ spring:
 lattice:
   ai:
     classification:
-      base-url: https://api.deepseek.com/v1
-      model: deepseek-chat
+      base-url: ${OLLAMA_BASE_URL:http://localhost:11434}
+      model: gpt-oss:20b
     embedding:
-      base-url: https://api.deepseek.com/v1
-      model: text-embedding-3-large
+      base-url: ${OLLAMA_BASE_URL:http://localhost:11434}
+      model: gpt-oss:20b
   wealth:
     firefly:
       base-url: ${FIREFLY_BASE_URL:http://firefly:8080}

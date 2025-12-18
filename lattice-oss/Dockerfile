@@ -1,22 +1,21 @@
 # Build stage
-FROM maven:3.9.9-eclipse-temurin-21 AS builder
+FROM gradle:8.5-jdk21 AS builder
 WORKDIR /workspace
 
-COPY pom.xml ./
-COPY lattice-core/pom.xml lattice-core/pom.xml
-COPY lattice-ingestion/pom.xml lattice-ingestion/pom.xml
-COPY lattice-retrieval/pom.xml lattice-retrieval/pom.xml
-COPY lattice-agent/pom.xml lattice-agent/pom.xml
-COPY lattice-application/pom.xml lattice-application/pom.xml
-
-RUN mvn -pl lattice-application -am dependency:go-offline
+COPY settings.gradle build.gradle gradlew ./
+COPY gradle gradle
+COPY lattice-core/build.gradle lattice-core/
+COPY lattice-ingestion/build.gradle lattice-ingestion/
+COPY lattice-retrieval/build.gradle lattice-retrieval/
+COPY lattice-agent/build.gradle lattice-agent/
+COPY lattice-application/build.gradle lattice-application/
 
 COPY . .
-RUN mvn -pl lattice-application -am package -DskipTests
+RUN ./gradlew :lattice-application:bootJar --no-daemon -x test
 
 # Runtime stage
 FROM eclipse-temurin:21-jre-alpine
 WORKDIR /app
-COPY --from=builder /workspace/lattice-application/target/*SNAPSHOT.jar app.jar
+COPY --from=builder /workspace/lattice-application/build/libs/*SNAPSHOT.jar app.jar
 EXPOSE 8080
 ENTRYPOINT ["java","-jar","/app/app.jar"]

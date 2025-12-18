@@ -45,3 +45,6 @@ ntfy/
 **/node_modules/
 web-react/dist/
 /lattice-pro/
+
+# Ignore Gradle build output directory
+build

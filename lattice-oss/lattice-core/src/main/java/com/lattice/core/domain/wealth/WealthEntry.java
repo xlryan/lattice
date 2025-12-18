@@ -1,10 +1,8 @@
 package com.lattice.core.domain.wealth;
 
-import com.lattice.core.domain.support.DoubleVectorConverter;
 import com.lattice.core.tenancy.BaseTenantEntity;
-import com.vladmihalcea.hibernate.type.array.ListArrayType;
+import com.lattice.core.infrastructure.persistence.VectorType;
 import jakarta.persistence.Column;
-import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -18,6 +16,7 @@ import org.hibernate.type.SqlTypes;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -26,7 +25,7 @@ import java.util.UUID;
  * Wealth domain entry, typically ingested from Firefly or manual bookkeeping.
  */
 @Entity
-@Table(name = "lattice_wealth_entries")
+@Table(name = "lattice_wealth_entries", schema = "lattice")
 public class WealthEntry extends BaseTenantEntity {
 
     public enum EntryType {
@@ -62,13 +61,13 @@ public class WealthEntry extends BaseTenantEntity {
     @Column(name = "occurred_on")
     private LocalDate occurredOn;
 
-    @Convert(converter = DoubleVectorConverter.class)
+    @Type(VectorType.class)
     @Column(name = "embedding", columnDefinition = "vector(1536)")
     private List<Double> embedding;
 
-    @Type(ListArrayType.class)
+    @JdbcTypeCode(SqlTypes.ARRAY)
     @Column(name = "tags", columnDefinition = "text[]")
-    private List<String> tags;
+    private List<String> tags = new ArrayList<>();
 
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
@@ -148,7 +147,7 @@ public class WealthEntry extends BaseTenantEntity {
         private String currency;
         private LocalDate occurredOn;
         private List<Double> embedding;
-        private List<String> tags;
+        private List<String> tags = new ArrayList<>();
 
         public Builder entryType(EntryType entryType) {
             this.entryType = entryType;
