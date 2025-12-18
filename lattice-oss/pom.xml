@@ -14,6 +14,7 @@
         <java.version>21</java.version>
         <spring.boot.version>3.3.4</spring.boot.version>
         <spring.ai.version>1.1.2</spring.ai.version>
+        <flyway.version>10.10.0</flyway.version>
         <maven.compiler.release>${java.version}</maven.compiler.release>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
@@ -63,6 +64,16 @@
                 <artifactId>lombok</artifactId>
                 <version>1.18.34</version>
                 <scope>provided</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.flywaydb</groupId>
+                <artifactId>flyway-core</artifactId>
+                <version>${flyway.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.flywaydb</groupId>
+                <artifactId>flyway-database-postgresql</artifactId>
+                <version>${flyway.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.lattice</groupId>
