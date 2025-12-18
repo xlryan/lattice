@@ -55,7 +55,7 @@ services:
 
   backend:
     build:
-      context: ./server-java
+      context: lattice-oss
       dockerfile: Dockerfile
     container_name: lattice-backend
     restart: unless-stopped

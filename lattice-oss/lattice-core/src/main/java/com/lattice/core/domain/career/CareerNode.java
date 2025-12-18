@@ -1,6 +1,7 @@
-package com.lattice.core.domain.wealth;
+package com.lattice.core.domain.career;
 
 import com.lattice.core.domain.support.DoubleVectorConverter;
+import com.lattice.core.tenancy.BaseTenantEntity;
 import com.vladmihalcea.hibernate.type.array.ListArrayType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Convert;
@@ -11,61 +12,39 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.JdbcTypeCode;
-import org.hibernate.annotations.Type;
 import org.hibernate.type.SqlTypes;
 
-import java.math.BigDecimal;
 import java.time.Instant;
-import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
 /**
- * Wealth domain entry, typically ingested from Firefly or manual bookkeeping.
+ * Career 域的原子节点，承载 STAR 结构和语义向量。
  */
 @Entity
-@Table(name = "lattice_wealth_entries")
-public class WealthEntry {
-
-    public enum EntryType {
-        EXPENSE,
-        INCOME,
-        TRANSFER,
-        ASSET_EVENT
-    }
+@Table(name = "lattice_career_nodes")
+public class CareerNode extends BaseTenantEntity {
 
     @Id
     private UUID id;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "entry_type", nullable = false, length = 32)
-    private EntryType entryType;
+    @Column(name = "type", nullable = false, length = 32)
+    private CareerType type;
 
-    @Column(name = "source_system", length = 64)
-    private String sourceSystem;
-
-    @Column(name = "raw_content", columnDefinition = "text", nullable = false)
+    @Column(name = "raw_content", nullable = false, columnDefinition = "text")
     private String rawContent;
 
     @JdbcTypeCode(SqlTypes.JSON)
-    @Column(name = "structured_data", columnDefinition = "jsonb", nullable = false)
+    @Column(name = "structured_data", nullable = false, columnDefinition = "jsonb")
     private Map<String, Object> structuredData;
 
-    @Column(name = "amount", precision = 18, scale = 2)
-    private BigDecimal amount;
-
-    @Column(name = "currency", length = 12)
-    private String currency;
-
-    @Column(name = "occurred_on")
-    private LocalDate occurredOn;
-
     @Convert(converter = DoubleVectorConverter.class)
-    @Column(name = "embedding", columnDefinition = "vector(1536)")
+    @Column(name = "embedding", nullable = false, columnDefinition = "vector(1536)")
     private List<Double> embedding;
 
-    @Type(ListArrayType.class)
+    @org.hibernate.annotations.Type(ListArrayType.class)
     @Column(name = "tags", columnDefinition = "text[]")
     private List<String> tags;
 
@@ -73,18 +52,14 @@ public class WealthEntry {
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
 
-    protected WealthEntry() {
+    protected CareerNode() {
     }
 
-    private WealthEntry(Builder builder) {
+    private CareerNode(Builder builder) {
         this.id = builder.id;
-        this.entryType = builder.entryType;
-        this.sourceSystem = builder.sourceSystem;
+        this.type = builder.type;
         this.rawContent = builder.rawContent;
         this.structuredData = builder.structuredData;
-        this.amount = builder.amount;
-        this.currency = builder.currency;
-        this.occurredOn = builder.occurredOn;
         this.embedding = builder.embedding;
         this.tags = builder.tags;
     }
@@ -97,12 +72,8 @@ public class WealthEntry {
         return id;
     }
 
-    public EntryType getEntryType() {
-        return entryType;
-    }
-
-    public String getSourceSystem() {
-        return sourceSystem;
+    public CareerType getType() {
+        return type;
     }
 
     public String getRawContent() {
@@ -111,18 +82,6 @@ public class WealthEntry {
 
     public Map<String, Object> getStructuredData() {
         return structuredData;
-    }
-
-    public BigDecimal getAmount() {
-        return amount;
-    }
-
-    public String getCurrency() {
-        return currency;
-    }
-
-    public LocalDate getOccurredOn() {
-        return occurredOn;
     }
 
     public List<Double> getEmbedding() {
@@ -139,23 +98,17 @@ public class WealthEntry {
 
     public static final class Builder {
         private UUID id = UUID.randomUUID();
-        private EntryType entryType;
-        private String sourceSystem;
+        private CareerType type;
         private String rawContent;
-        private Map<String, Object> structuredData = Map.of();
-        private BigDecimal amount;
-        private String currency;
-        private LocalDate occurredOn;
+        private Map<String, Object> structuredData;
         private List<Double> embedding;
         private List<String> tags;
 
-        public Builder entryType(EntryType entryType) {
-            this.entryType = entryType;
-            return this;
+        private Builder() {
         }
 
-        public Builder sourceSystem(String sourceSystem) {
-            this.sourceSystem = sourceSystem;
+        public Builder type(CareerType type) {
+            this.type = type;
             return this;
         }
 
@@ -169,21 +122,6 @@ public class WealthEntry {
             return this;
         }
 
-        public Builder amount(BigDecimal amount) {
-            this.amount = amount;
-            return this;
-        }
-
-        public Builder currency(String currency) {
-            this.currency = currency;
-            return this;
-        }
-
-        public Builder occurredOn(LocalDate occurredOn) {
-            this.occurredOn = occurredOn;
-            return this;
-        }
-
         public Builder embedding(List<Double> embedding) {
             this.embedding = embedding;
             return this;
@@ -194,8 +132,8 @@ public class WealthEntry {
             return this;
         }
 
-        public WealthEntry build() {
-            return new WealthEntry(this);
+        public CareerNode build() {
+            return new CareerNode(this);
         }
     }
 }
