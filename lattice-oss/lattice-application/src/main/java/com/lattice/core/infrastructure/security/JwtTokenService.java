@@ -8,6 +8,8 @@ import org.springframework.stereotype.Component;
 
 import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.time.Instant;
 import java.util.Date;
 import java.util.Map;
@@ -23,7 +25,7 @@ public class JwtTokenService {
 
     public JwtTokenService(JwtProperties properties) {
         this.properties = properties;
-        this.secretKey = Keys.hmacShaKeyFor(properties.getSecret().getBytes(StandardCharsets.UTF_8));
+        this.secretKey = Keys.hmacShaKeyFor(resolveSecretKey(properties.getSecret()));
     }
 
     public String generateToken(String subject, Map<String, Object> claims) {
@@ -45,5 +47,18 @@ public class JwtTokenService {
                 .build()
                 .parseClaimsJws(token)
                 .getBody();
+    }
+
+    private byte[] resolveSecretKey(String secret) {
+        byte[] keyBytes = secret == null ? new byte[0] : secret.getBytes(StandardCharsets.UTF_8);
+        if (keyBytes.length >= 32) {
+            return keyBytes;
+        }
+        try {
+            // Derive a secure 256-bit key from shorter secrets
+            return MessageDigest.getInstance("SHA-256").digest(keyBytes);
+        } catch (NoSuchAlgorithmException ex) {
+            throw new IllegalStateException("SHA-256 algorithm not available", ex);
+        }
     }
 }
