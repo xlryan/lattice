@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.RestController;
 /**
  * 对外开放的 Ingestion API，单 endpoint 就能完成自动分类入库。
  */
-@RestController
+@RestController("latticeIngestionController")
 @RequestMapping("/api/ingest")
 @RequiredArgsConstructor
 public class IngestionController {

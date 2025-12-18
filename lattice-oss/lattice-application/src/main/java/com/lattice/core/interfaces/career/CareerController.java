@@ -1,4 +1,4 @@
-jixupackage com.lattice.core.interfaces.career;
+package com.lattice.core.interfaces.career;
 
 import com.lattice.core.application.career.CareerService;
 import com.lattice.core.domain.career.CareerNode;

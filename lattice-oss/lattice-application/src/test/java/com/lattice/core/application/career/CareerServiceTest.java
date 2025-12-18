@@ -8,13 +8,13 @@ import com.lattice.core.infrastructure.prompt.PromptRegistry;
 import com.lattice.core.repository.career.CareerRepository;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
-import org.springframework.ai.chat.Generation;
-import org.springframework.ai.chat.client.ChatClient;
-import org.springframework.ai.chat.client.ChatClientResponse;
-import org.springframework.ai.chat.client.ChatClientResponse.ChatClientResult;
+import org.springframework.ai.chat.messages.AssistantMessage;
+import org.springframework.ai.chat.model.ChatModel;
+import org.springframework.ai.chat.model.ChatResponse;
+import org.springframework.ai.chat.model.Generation;
 import org.springframework.ai.chat.prompt.Prompt;
 import org.springframework.ai.converter.BeanOutputConverter;
-import org.springframework.ai.embedding.EmbeddingClient;
+import org.springframework.ai.embedding.EmbeddingModel;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.Import;
@@ -32,9 +32,9 @@ class CareerServiceTest {
     @MockBean
     CareerRepository repository;
     @MockBean
-    ChatClient chatClient;
+    ChatModel chatModel;
     @MockBean
-    EmbeddingClient embeddingClient;
+    EmbeddingModel embeddingModel;
     @MockBean
     PromptRegistry promptRegistry;
     @MockBean
@@ -43,13 +43,12 @@ class CareerServiceTest {
     @Test
     void shouldPersistStarRecordFromAi() {
         when(promptRegistry.resolveContent("career.star")).thenReturn("prompt");
-        ChatClientResponse response = ChatClientResponse.builder()
-                .withResult(new ChatClientResult(List.of(new Generation("{\"situation\":\"S\",\"task\":\"T\",\"action\":\"A\",\"result\":\"R\"}")), Map.of(), null))
-                .build();
-        when(chatClient.prompt(any(Prompt.class))).thenReturn(builder -> response);
-        when(embeddingClient.embed(any(String.class))).thenReturn(List.of(0.1, 0.2));
+        ChatResponse response = new ChatResponse(List.of(new Generation(new AssistantMessage("{\"situation\":\"S\",\"task\":\"T\",\"action\":\"A\",\"result\":\"R\"}"))));
+        
+        when(chatModel.call(any(Prompt.class))).thenReturn(response);
+        when(embeddingModel.embed(any(String.class))).thenReturn(new float[]{0.1f, 0.2f});
 
-        CareerService service = new CareerService(repository, chatClient, embeddingClient, promptRegistry, aiUsageMonitor);
+        CareerService service = new CareerService(repository, chatModel, embeddingModel, promptRegistry, aiUsageMonitor);
         service.createLog("raw", CareerType.WORK_LOG, List.of("tag"));
         Mockito.verify(repository).save(any(CareerNode.class));
     }

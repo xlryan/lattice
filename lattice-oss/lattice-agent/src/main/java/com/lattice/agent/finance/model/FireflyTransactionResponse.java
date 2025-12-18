@@ -27,7 +27,7 @@ public record FireflyTransactionResponse(@JsonProperty("data") Data data) {
 
     public record Attributes(@JsonProperty("transactions") List<Transaction> transactions) {
         public Attributes {
-            this.transactions = transactions == null ? Collections.emptyList() : transactions;
+            transactions = transactions == null ? Collections.emptyList() : transactions;
         }
     }
 

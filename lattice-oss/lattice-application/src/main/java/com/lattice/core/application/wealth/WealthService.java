@@ -10,12 +10,13 @@ import com.lattice.core.infrastructure.tools.PythonWorkerClient;
 import com.lattice.core.repository.wealth.WealthRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.ai.embedding.EmbeddingClient;
+import org.springframework.ai.embedding.EmbeddingModel;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.OffsetDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -31,7 +32,7 @@ public class WealthService {
     private final PythonWorkerClient pythonWorkerClient;
     private final FireflyClient fireflyClient;
     private final FireflyProperties fireflyProperties;
-    private final EmbeddingClient embeddingClient;
+    private final EmbeddingModel embeddingModel;
 
     @Transactional
     public WealthEntry ingestExpense(ExpenseCommand command) {
@@ -68,10 +69,19 @@ public class WealthService {
                 .amount(amount)
                 .currency(expenseCommand.currency())
                 .occurredOn(command.occurredAt().toLocalDate())
-                .embedding(embeddingClient.embed(command.description()))
+                .embedding(toList(embeddingModel.embed(command.description())))
                 .tags(command.tags())
                 .build();
         return wealthRepository.save(entry);
+    }
+
+    private List<Double> toList(float[] embedding) {
+        if (embedding == null) return List.of();
+        List<Double> list = new ArrayList<>(embedding.length);
+        for (float f : embedding) {
+            list.add((double) f);
+        }
+        return list;
     }
 
     private void validateBudget(BigDecimal amount) {

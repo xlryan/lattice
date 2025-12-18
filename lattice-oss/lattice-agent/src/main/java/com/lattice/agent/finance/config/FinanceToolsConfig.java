@@ -4,7 +4,7 @@ import com.fasterxml.jackson.annotation.JsonPropertyDescription;
 import com.lattice.agent.finance.model.FireflyExpenseCommand;
 import com.lattice.agent.finance.service.FinanceCategoryMapper;
 import com.lattice.agent.finance.service.FireflyApiClient;
-import org.springframework.beans.factory.annotation.Description;
+import org.springframework.context.annotation.Description;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 

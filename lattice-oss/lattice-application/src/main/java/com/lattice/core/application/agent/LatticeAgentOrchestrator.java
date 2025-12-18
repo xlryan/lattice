@@ -9,7 +9,8 @@ import com.lattice.core.infrastructure.logging.TraceContextHolder;
 import com.lattice.core.infrastructure.tools.PythonWorkerClient;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.ai.chat.client.ChatClient;
+import org.springframework.ai.chat.model.ChatModel;
+import org.springframework.ai.chat.prompt.Prompt;
 import org.springframework.ai.chat.prompt.PromptTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -32,7 +33,7 @@ public class LatticeAgentOrchestrator {
             文本: {input}
             """;
 
-    private final ChatClient chatClient;
+    private final ChatModel chatModel;
     private final WealthService wealthService;
     private final CareerService careerService;
     private final ObjectMapper objectMapper;
@@ -52,8 +53,8 @@ public class LatticeAgentOrchestrator {
 
     private AgentIntent classifyIntent(String input) {
         try {
-            String response = chatClient.call(new PromptTemplate(INTENT_PROMPT).create(Map.of("input", input)))
-                    .getResult().getOutput().getContent();
+            String response = chatModel.call(new PromptTemplate(INTENT_PROMPT).create(Map.of("input", input)))
+                    .getResult().getOutput().getText();
             IntentResult intentResult = objectMapper.readValue(response, IntentResult.class);
             return AgentIntent.valueOf(intentResult.intent());
         } catch (Exception ex) {
@@ -91,8 +92,8 @@ public class LatticeAgentOrchestrator {
     }
 
     private AgentResponse handleChat(AgentRequest request) {
-        String reply = chatClient.prompt(builder -> builder.withUser(request.userInput()))
-                .call().getResult().getOutput().getContent();
+        String reply = chatModel.call(new Prompt(request.userInput()))
+                .getResult().getOutput().getText();
         return new AgentResponse(AgentIntent.CHAT, reply);
     }
 

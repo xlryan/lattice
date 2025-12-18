@@ -9,16 +9,18 @@ import com.lattice.core.infrastructure.logging.TraceContextHolder;
 import com.lattice.core.repository.career.CareerRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.ai.chat.client.ChatClient;
+import org.springframework.ai.chat.metadata.Usage;
+import org.springframework.ai.chat.model.ChatModel;
+import org.springframework.ai.chat.model.ChatResponse;
+import org.springframework.ai.chat.model.Generation;
 import org.springframework.ai.chat.prompt.PromptTemplate;
-import org.springframework.ai.chat.prompt.PromptTemplateContext;
-import org.springframework.ai.chat.prompt.PromptTemplateContextFactory;
 import org.springframework.ai.converter.BeanOutputConverter;
-import org.springframework.ai.embedding.EmbeddingClient;
+import org.springframework.ai.embedding.EmbeddingModel;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -31,8 +33,8 @@ public class CareerService {
     private static final String STAR_PROMPT_KEY = "career.star";
 
     private final CareerRepository repository;
-    private final ChatClient chatClient;
-    private final EmbeddingClient embeddingClient;
+    private final ChatModel chatModel;
+    private final EmbeddingModel embeddingModel;
     private final BeanOutputConverter<StarRecord> starOutputConverter = new BeanOutputConverter<>(StarRecord.class);
     private final PromptRegistry promptRegistry;
     private final AiUsageMonitor aiUsageMonitor;
@@ -43,7 +45,7 @@ public class CareerService {
         log.info("[traceId={}] Creating career node type={} tagCount={}",
                 TraceContextHolder.currentTraceId(), type, tags == null ? 0 : tags.size());
         Map<String, Object> structured = generateStarJson(rawText);
-        List<Double> embedding = embeddingClient.embed(rawText);
+        List<Double> embedding = toList(embeddingModel.embed(rawText));
         CareerNode node = CareerNode.builder()
                 .type(type)
                 .rawContent(rawText)
@@ -56,7 +58,7 @@ public class CareerService {
 
     @Transactional(readOnly = true)
     public List<CareerNode> semanticSearch(String query, int limit) {
-        List<Double> vector = embeddingClient.embed(query);
+        List<Double> vector = toList(embeddingModel.embed(query));
         int resolvedLimit = Math.max(1, Math.min(limit, 20));
         return repository.semanticSearch(vector, resolvedLimit);
     }
@@ -65,13 +67,12 @@ public class CareerService {
         try {
             String prompt = promptRegistry.resolveContent(STAR_PROMPT_KEY);
             PromptTemplate template = new PromptTemplate(prompt);
-            PromptTemplateContext context = PromptTemplateContextFactory.map(Map.of("text", rawText));
-            var result = chatClient.prompt(template.create(context))
-                    .functions(starOutputConverter)
-                    .call().getResult();
-            var output = result.getOutput();
-            String structured = output.getContent();
-            recordUsage(result.getMetadata().getUsage(), output.getMetadata().getModel(), "CAREER");
+            ChatResponse response = chatModel.call(template.create(Map.of("text", rawText)));
+            Generation result = response.getResult();
+            String structured = result.getOutput().getText();
+            var metadata = response.getMetadata();
+            String model = metadata == null ? null : metadata.getModel();
+            recordUsage(metadata == null ? null : metadata.getUsage(), model, "CAREER");
             StarRecord record = starOutputConverter.convert(structured);
             return Map.of(
                     "situation", record.situation(),
@@ -90,11 +91,20 @@ public class CareerService {
         }
     }
 
-    private void recordUsage(org.springframework.ai.model.Usage usage, String model, String domain) {
+    private void recordUsage(Usage usage, String model, String domain) {
         if (usage != null) {
             aiUsageMonitor.record(model, domain,
                     usage.getPromptTokens() == null ? 0 : usage.getPromptTokens(),
                     usage.getCompletionTokens() == null ? 0 : usage.getCompletionTokens());
         }
+    }
+
+    private List<Double> toList(float[] embedding) {
+        if (embedding == null) return List.of();
+        List<Double> list = new ArrayList<>(embedding.length);
+        for (float f : embedding) {
+            list.add((double) f);
+        }
+        return list;
     }
 }

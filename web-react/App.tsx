@@ -18,6 +18,12 @@ const App: React.FC = () => {
   const [currentPage, setCurrentPage] = useState<PageView>('dashboard');
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const { isAuthenticated, logout } = useAuth();
+  
+  // Mock user data - in a real app this would come from AuthContext or an API call
+  const user = {
+    name: '管理员',
+    email: 'admin@lattice.local'
+  };
 
   const renderPage = () => {
     switch (currentPage) {
@@ -64,7 +70,7 @@ const App: React.FC = () => {
 
       {/* Sidebar */}
       <div className={`${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0 transition-transform duration-300 fixed md:relative z-40 h-full`}>
-        <Sidebar currentPage={currentPage} onNavigate={setCurrentPage} />
+        <Sidebar currentPage={currentPage} onNavigate={setCurrentPage} user={user} />
       </div>
 
       {/* Main Content Area */}

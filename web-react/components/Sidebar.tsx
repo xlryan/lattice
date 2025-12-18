@@ -11,12 +11,18 @@ import {
 } from 'lucide-react';
 import { PageView } from '../types';
 
+export interface User {
+  name: string;
+  email: string;
+}
+
 interface SidebarProps {
   currentPage: PageView;
   onNavigate: (page: PageView) => void;
+  user: User | null;
 }
 
-export const Sidebar: React.FC<SidebarProps> = ({ currentPage, onNavigate }) => {
+export const Sidebar: React.FC<SidebarProps> = ({ currentPage, onNavigate, user }) => {
   const menuGroups = [
     {
       title: '核心功能',
@@ -53,6 +59,28 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentPage, onNavigate }) => 
       ]
     }
   ];
+
+  const renderUserProfile = () => {
+    if (!user) {
+      return (
+        <div className="p-4 border-t border-border flex justify-center">
+          <div className="h-5 w-5 animate-spin rounded-full border-2 border-slate-500 border-t-transparent"></div>
+        </div>
+      );
+    }
+
+    return (
+      <div className="p-4 border-t border-border">
+        <div className="flex items-center gap-3 px-2">
+          <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-primary to-secondary"></div>
+          <div className="flex-1 overflow-hidden">
+            <p className="text-sm font-medium text-slate-200 truncate">{user.name}</p>
+            <p className="text-xs text-slate-500 truncate">{user.email}</p>
+          </div>
+        </div>
+      </div>
+    );
+  };
 
   return (
     <div className="w-64 h-full bg-surface border-r border-border flex flex-col">
@@ -96,15 +124,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentPage, onNavigate }) => 
         ))}
       </div>
 
-      <div className="p-4 border-t border-border">
-        <div className="flex items-center gap-3 px-2">
-          <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-primary to-secondary"></div>
-          <div className="flex-1 overflow-hidden">
-            <p className="text-sm font-medium text-slate-200 truncate">管理员</p>
-            <p className="text-xs text-slate-500 truncate">admin@lattice.local</p>
-          </div>
-        </div>
-      </div>
+      {renderUserProfile()}
     </div>
   );
 };

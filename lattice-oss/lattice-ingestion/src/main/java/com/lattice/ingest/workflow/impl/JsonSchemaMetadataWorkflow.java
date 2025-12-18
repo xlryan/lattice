@@ -6,7 +6,7 @@ import com.lattice.core.domain.DomainType;
 import com.lattice.ingest.workflow.MetadataExtractionWorkflow;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.ai.chat.client.ChatClient;
+import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.ai.chat.prompt.PromptTemplate;
 import org.springframework.stereotype.Component;
 
@@ -29,7 +29,7 @@ public class JsonSchemaMetadataWorkflow implements MetadataExtractionWorkflow {
             DomainType.INBOX, "{raw_hint, recommended_domain, urgency}"
     );
 
-    private final ChatClient chatClient;
+    private final ChatModel chatModel;
     private final ObjectMapper objectMapper;
 
     @Override
@@ -41,10 +41,10 @@ public class JsonSchemaMetadataWorkflow implements MetadataExtractionWorkflow {
                     schema: {schema}\n
                     文本: {input}
                     """);
-            String content = chatClient.call(template.create(Map.of(
+            String content = chatModel.call(template.create(Map.of(
                     "schema", schema,
                     "input", rawText
-            ))).getResult().getOutput().getContent();
+            ))).getResult().getOutput().getText();
             return objectMapper.readTree(content);
         } catch (Exception ex) {
             log.warn("元数据抽取失败，降级为空 JSON", ex);

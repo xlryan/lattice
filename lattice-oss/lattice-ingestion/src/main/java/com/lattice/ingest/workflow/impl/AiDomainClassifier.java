@@ -7,7 +7,7 @@ import com.lattice.ingest.workflow.DomainClassifier;
 import com.lattice.ingest.workflow.DomainPrediction;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.ai.chat.client.ChatClient;
+import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.ai.chat.prompt.PromptTemplate;
 import org.springframework.stereotype.Component;
 
@@ -15,7 +15,7 @@ import java.util.Locale;
 import java.util.Map;
 
 /**
- * 使用 Spring AI ChatClient 调用 DeepSeek/OpenAI，实现 zero-shot Domain 分类。
+ * 使用 Spring AI ChatModel 调用 DeepSeek/OpenAI，实现 zero-shot Domain 分类。
  */
 @Slf4j
 @Component
@@ -28,15 +28,15 @@ public class AiDomainClassifier implements DomainClassifier {
             文本: {input}
             """;
 
-    private final ChatClient chatClient;
+    private final ChatModel chatModel;
     private final ObjectMapper objectMapper;
 
     @Override
     public DomainPrediction classify(String rawText) {
         try {
             PromptTemplate promptTemplate = new PromptTemplate(TEMPLATE);
-            String content = chatClient.call(promptTemplate.create(Map.of("input", rawText)))
-                    .getResult().getOutput().getContent();
+            String content = chatModel.call(promptTemplate.create(Map.of("input", rawText)))
+                    .getResult().getOutput().getText();
             JsonNode node = objectMapper.readTree(content);
             DomainType domain = DomainType.valueOf(node.path("domain").asText("CAREER").toUpperCase(Locale.ROOT));
             double confidence = node.path("confidence").asDouble(0.8d);

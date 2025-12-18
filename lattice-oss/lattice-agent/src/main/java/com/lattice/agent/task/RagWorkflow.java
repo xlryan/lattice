@@ -4,8 +4,7 @@ import com.lattice.core.domain.DomainType;
 import com.lattice.retrieval.api.SearchRequest;
 import com.lattice.retrieval.service.RetrievalService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.ai.chat.Generation;
-import org.springframework.ai.chat.client.ChatClient;
+import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.ai.chat.prompt.PromptTemplate;
 import org.springframework.stereotype.Component;
 
@@ -20,7 +19,7 @@ import java.util.stream.Collectors;
 public class RagWorkflow {
 
     private final RetrievalService retrievalService;
-    private final ChatClient chatClient;
+    private final ChatModel chatModel;
 
     public String answer(String question, DomainType domainType) {
         var response = retrievalService.search(new SearchRequest(question, domainType, null, 5, 0.5d));
@@ -32,10 +31,9 @@ public class RagWorkflow {
                 背景:\n{context}\n
                 问题: {question}
                 """);
-        Generation generation = chatClient.call(template.create(Map.of(
+        return chatModel.call(template.create(Map.of(
                 "context", context,
                 "question", question
-        ))).getResult().getOutput();
-        return generation.getContent();
+        ))).getResult().getOutput().getText();
     }
 }
