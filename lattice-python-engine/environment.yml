@@ -178,12 +178,14 @@ dependencies:
       - annotated-doc==0.0.4
       - annotated-types==0.7.0
       - click==8.3.1
+      - cryptography==46.0.3
       - fastapi==0.124.4
       - filelock==3.20.1
       - fsspec==2025.12.0
       - hf-xet==1.2.0
       - httptools==0.7.1
       - huggingface-hub==0.36.0
+      - jieba==0.42.1
       - jsonpatch==1.33
       - jsonpointer==3.0.0
       - langchain==1.2.0
@@ -197,9 +199,12 @@ dependencies:
       - networkx==3.6.1
       - orjson==3.11.5
       - ormsgpack==1.12.1
+      - pdfminer-six==20251107
+      - pdfplumber==0.11.8
       - pydantic==2.12.5
       - pydantic-core==2.41.5
       - pymupdf==1.26.7
+      - pypdfium2==5.2.0
       - python-dotenv==1.2.1
       - python-multipart==0.0.20
       - regex==2025.11.3
