@@ -80,7 +80,7 @@ public class FireflyClient {
 
     private record FireflyTransactionRequest(TransactionWrapper transactions) {
         static FireflyTransactionRequest from(FireflyExpenseCommand command) {
-            Transaction transaction = new Transaction(
+            TransactionRequest transaction = new TransactionRequest(
                     "withdrawal",
                     command.amount().toPlainString(),
                     command.description(),
@@ -94,17 +94,17 @@ public class FireflyClient {
         }
     }
 
-    private record TransactionWrapper(List<Transaction> transactions) {
+    private record TransactionWrapper(List<TransactionRequest> transactions) {
     }
 
-    private record Transaction(String type,
-                               String amount,
-                               String description,
-                               String category_name,
-                               String source_name,
-                               String destination_name,
-                               String currency_code,
-                               String date) {
+    private record TransactionRequest(String type,
+                                      String amount,
+                                      String description,
+                                      String category_name,
+                                      String source_name,
+                                      String destination_name,
+                                      String currency_code,
+                                      String date) {
     }
 
     private record FireflyTransactionResponse(FireflyData data) {
@@ -177,6 +177,15 @@ public class FireflyClient {
 
     private record TransactionData(TransactionAttributes attributes) {}
     private record TransactionAttributes(List<Transaction> transactions) {}
+
+    private record Transaction(String transaction_journal_id,
+                               String date,
+                               String description,
+                               String amount,
+                               String type,
+                               String category_name,
+                               String source_name) {
+    }
 
     public record FireflyTransactionItem(
             String id,

@@ -48,3 +48,10 @@ web-react/dist/
 
 # Ignore Gradle build output directory
 build
+
+# Logs
+*.log
+logs/
+backend-run.log
+__pycache__/
+backend-app.pid
