@@ -77,8 +77,23 @@ services:
       LATTICE_NOTIFICATIONS_NTFY_BASE_URL: http://ntfy
       LATTICE_NOTIFICATIONS_NTFY_TOPIC: lattice-events
       LATTICE_NOTIFICATIONS_NTFY_ENABLED: "true"
+      LATTICE_PYTHON_ENGINE_URL: http://python-worker:8000
     ports:
       - "8080:8080"
+    networks:
+      - grain-net
+
+  python-worker:
+    build:
+      context: ./lattice-python-engine
+      dockerfile: Dockerfile
+    container_name: lattice-python-worker
+    restart: unless-stopped
+    volumes:
+      - ./lattice-python-engine:/app
+    environment:
+      APP_NAME: "Lattice-Python-Engine"
+      DEBUG: "true"
     networks:
       - grain-net
 
