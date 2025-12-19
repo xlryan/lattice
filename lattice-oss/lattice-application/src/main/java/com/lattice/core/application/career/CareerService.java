@@ -57,6 +57,11 @@ public class CareerService {
     }
 
     @Transactional(readOnly = true)
+    public List<CareerNode> findAll() {
+        return repository.findAll();
+    }
+
+    @Transactional(readOnly = true)
     public List<CareerNode> semanticSearch(String query, int limit) {
         List<Double> vector = toList(embeddingModel.embed(query));
         int resolvedLimit = Math.max(1, Math.min(limit, 20));

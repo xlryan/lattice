@@ -52,9 +52,19 @@ export const LatticeChat: React.FC = () => {
         signal: controller.signal,
         async onmessage(event) {
           if (event.data) {
-            setMessages(prev => prev.map(msg =>
-              msg.id === assistantMsgId ? { ...msg, content: msg.content + event.data } : msg
-            ));
+            try {
+              const payload = JSON.parse(event.data);
+              if (payload.code === 'SUCCESS' && payload.data?.reply) {
+                setMessages(prev => prev.map(msg =>
+                  msg.id === assistantMsgId ? { ...msg, content: payload.data.reply } : msg
+                ));
+              }
+            } catch (e) {
+              // If not JSON, fallback to direct text (though backend sends JSON)
+              setMessages(prev => prev.map(msg =>
+                msg.id === assistantMsgId ? { ...msg, content: msg.content + event.data } : msg
+              ));
+            }
           }
         },
         onerror(err) {

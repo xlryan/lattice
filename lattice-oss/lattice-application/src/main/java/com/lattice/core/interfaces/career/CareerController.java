@@ -37,6 +37,12 @@ public class CareerController {
         return ResponseEntity.ok(ApiResponse.success(toResponse(node)));
     }
 
+    @GetMapping("/list")
+    public ResponseEntity<ApiResponse<List<CareerNodeResponse>>> listAll() {
+        List<CareerNode> nodes = careerService.findAll();
+        return ResponseEntity.ok(ApiResponse.success(nodes.stream().map(this::toResponse).toList()));
+    }
+
     @GetMapping("/search")
     public ResponseEntity<ApiResponse<List<CareerNodeResponse>>> search(
             @RequestParam("q") @NotBlank String query,

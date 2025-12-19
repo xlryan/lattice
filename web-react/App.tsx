@@ -17,12 +17,11 @@ import { useAuth } from './contexts/AuthContext';
 const App: React.FC = () => {
   const [currentPage, setCurrentPage] = useState<PageView>('dashboard');
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
-  const { isAuthenticated, logout } = useAuth();
+  const { isAuthenticated, logout, username } = useAuth();
   
-  // Mock user data - in a real app this would come from AuthContext or an API call
   const user = {
-    name: '管理员',
-    email: 'admin@lattice.local'
+    name: username || '管理员',
+    email: `${username || 'admin'}@lattice.local`
   };
 
   const renderPage = () => {

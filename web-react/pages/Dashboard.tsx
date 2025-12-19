@@ -1,18 +1,11 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Activity, TrendingUp, DollarSign, Database } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { fetchDashboardStats } from '../services/lattice/dashboard';
+import { DashboardStats } from '../services/lattice/types';
+import { Skeleton } from 'antd';
 
-const data = [
-  { name: '周一', assets: 4000, liab: 2400 },
-  { name: '周二', assets: 3000, liab: 1398 },
-  { name: '周三', assets: 2000, liab: 9800 },
-  { name: '周四', assets: 2780, liab: 3908 },
-  { name: '周五', assets: 1890, liab: 4800 },
-  { name: '周六', assets: 2390, liab: 3800 },
-  { name: '周日', assets: 3490, liab: 4300 },
-];
-
-const StatCard: React.FC<{ title: string; value: string; trend: string; icon: React.ReactNode }> = ({ title, value, trend, icon }) => (
+const StatCard: React.FC<{ title: string; value: string | number; trend: string; icon: React.ReactNode }> = ({ title, value, trend, icon }) => (
   <div className="bg-surface border border-border rounded-lg p-6">
     <div className="flex justify-between items-start mb-4">
       <div>
@@ -33,13 +26,26 @@ const StatCard: React.FC<{ title: string; value: string; trend: string; icon: Re
 );
 
 export const Dashboard: React.FC = () => {
+  const [stats, setStats] = useState<DashboardStats | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchDashboardStats()
+      .then(setStats)
+      .finally(() => setLoading(false));
+  }, []);
+
+  if (loading) {
+    return <div className="p-6"><Skeleton active /></div>;
+  }
+
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <StatCard title="净资产 (Net Worth)" value="¥824,592" trend="+12.5%" icon={<DollarSign size={20} />} />
-        <StatCard title="知识节点 (Nodes)" value="1,204" trend="+5.2%" icon={<Database size={20} />} />
-        <StatCard title="活跃项目 (Projects)" value="8" trend="+1" icon={<Activity size={20} />} />
-        <StatCard title="健康评分 (Health)" value="92/100" trend="+2.4%" icon={<Activity size={20} />} />
+        <StatCard title="净资产 (Net Worth)" value={stats?.netWorth || '¥0'} trend="+12.5%" icon={<DollarSign size={20} />} />
+        <StatCard title="知识节点 (Nodes)" value={stats?.nodeCount || 0} trend="+5.2%" icon={<Database size={20} />} />
+        <StatCard title="活跃项目 (Projects)" value={stats?.activeProjects || 0} trend="+1" icon={<Activity size={20} />} />
+        <StatCard title="健康评分 (Health)" value={`${stats?.healthScore || 0}/100`} trend="+2.4%" icon={<Activity size={20} />} />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -49,7 +55,7 @@ export const Dashboard: React.FC = () => {
           </div>
           <div className="h-[300px] w-full">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={data}>
+              <BarChart data={stats?.monthlyFlow || []}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#334155" vertical={false} />
                 <XAxis dataKey="name" stroke="#64748b" fontSize={12} tickLine={false} axisLine={false} />
                 <YAxis stroke="#64748b" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(value) => `¥${value}`} />
@@ -58,8 +64,8 @@ export const Dashboard: React.FC = () => {
                   itemStyle={{ color: '#e2e8f0' }}
                   cursor={{ fill: '#334155', opacity: 0.2 }}
                 />
-                <Bar dataKey="assets" name="收入" fill="#10b981" radius={[4, 4, 0, 0]} />
-                <Bar dataKey="liab" name="支出" fill="#3b82f6" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="income" name="收入" fill="#10b981" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="expense" name="支出" fill="#3b82f6" radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -68,12 +74,12 @@ export const Dashboard: React.FC = () => {
         <div className="bg-surface border border-border rounded-lg p-6">
           <h3 className="font-semibold text-slate-200 mb-4">最近更新</h3>
           <div className="space-y-4">
-            {[1, 2, 3, 4, 5].map((i) => (
-              <div key={i} className="flex gap-3 pb-3 border-b border-border last:border-0 last:pb-0">
+            {(stats?.recentUpdates || []).map((update) => (
+              <div key={update.id} className="flex gap-3 pb-3 border-b border-border last:border-0 last:pb-0">
                 <div className="h-2 w-2 mt-2 rounded-full bg-primary flex-shrink-0"></div>
                 <div>
-                  <p className="text-sm text-slate-300">更新了职业生涯节点 "高级工程师"</p>
-                  <p className="text-xs text-slate-500 mt-1">2 小时前</p>
+                  <p className="text-sm text-slate-300">{update.content}</p>
+                  <p className="text-xs text-slate-500 mt-1">{update.time}</p>
                 </div>
               </div>
             ))}

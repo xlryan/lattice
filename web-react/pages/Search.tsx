@@ -5,7 +5,7 @@ import { hybridSearch } from '../lib/api';
 
 export const SearchPage: React.FC = () => {
   const [query, setQuery] = useState('');
-  const [domain, setDomain] = useState<'CAREER' | 'DIY' | 'MUSIC' | 'LIFE' | 'FINANCE'>('CAREER');
+  const [domain, setDomain] = useState<'CAREER' | 'WEALTH' | 'BUILD' | 'KNOWLEDGE' | 'INTEL' | 'INBOX'>('CAREER');
   const [results, setResults] = useState<SearchResult[]>([]);
   const [took, setTook] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -55,10 +55,11 @@ export const SearchPage: React.FC = () => {
               className="bg-slate-800 text-slate-200 text-xs border border-slate-700 rounded px-2 py-1 focus:outline-none"
             >
               <option value="CAREER">CAREER</option>
-              <option value="DIY">DIY</option>
-              <option value="MUSIC">MUSIC</option>
-              <option value="LIFE">LIFE</option>
-              <option value="FINANCE">FINANCE</option>
+              <option value="WEALTH">WEALTH</option>
+              <option value="BUILD">BUILD</option>
+              <option value="KNOWLEDGE">KNOWLEDGE</option>
+              <option value="INTEL">INTEL</option>
+              <option value="INBOX">INBOX</option>
             </select>
             <button
               onClick={handleSearch}

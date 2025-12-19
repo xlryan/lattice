@@ -65,6 +65,19 @@ public class FireflyClient {
         }
     }
 
+    public List<FireflyTransactionItem> fetchTransactions() {
+        try {
+            log.info("[traceId={}] Fetching Firefly transactions", TraceContextHolder.currentTraceId());
+            TransactionsResponse response = restClient.get()
+                    .uri("/api/v1/transactions")
+                    .retrieve()
+                    .body(TransactionsResponse.class);
+            return response == null ? List.of() : response.toItems();
+        } catch (RestClientException ex) {
+            throw new ExternalServiceException("Firefly transactions query failed", ex);
+        }
+    }
+
     private record FireflyTransactionRequest(TransactionWrapper transactions) {
         static FireflyTransactionRequest from(FireflyExpenseCommand command) {
             Transaction transaction = new Transaction(
@@ -143,4 +156,35 @@ public class FireflyClient {
 
     public record BalanceEntry(String accountName, BigDecimal balance, String currencyCode) {
     }
+
+    private record TransactionsResponse(List<TransactionData> data) {
+        List<FireflyTransactionItem> toItems() {
+            if (data == null) return List.of();
+            return data.stream()
+                    .flatMap(d -> d.attributes.transactions.stream()
+                            .map(t -> new FireflyTransactionItem(
+                                    t.transaction_journal_id,
+                                    t.date,
+                                    t.description,
+                                    new BigDecimal(t.amount),
+                                    t.type,
+                                    t.category_name,
+                                    t.source_name
+                            )))
+                    .toList();
+        }
+    }
+
+    private record TransactionData(TransactionAttributes attributes) {}
+    private record TransactionAttributes(List<Transaction> transactions) {}
+
+    public record FireflyTransactionItem(
+            String id,
+            String date,
+            String description,
+            BigDecimal amount,
+            String type,
+            String category,
+            String account
+    ) {}
 }

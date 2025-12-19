@@ -1,34 +1,8 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { MoreHorizontal, Search, Plus, Filter, Code } from 'lucide-react';
-import { CareerNode } from '../types';
-
-// Mock Data
-const MOCK_DATA: CareerNode[] = [
-  {
-    id: '1',
-    dateRange: '2022-至今',
-    company: '科技巨头集团',
-    role: '高级前端架构师',
-    tags: ['React', 'Architecture', 'Team Lead'],
-    properties: { teamSize: 12, stack: 'Next.js, GraphQL', achievements: ['构建时间减少 50%', '发布全新设计系统'] }
-  },
-  {
-    id: '2',
-    dateRange: '2019-2022',
-    company: '创新科技 (InnovateStart)',
-    role: '全栈工程师',
-    tags: ['Vue.js', 'Spring Boot', 'AWS'],
-    properties: { teamSize: 5, stack: 'Vue 2, Java 11', exitReason: '公司被收购' }
-  },
-  {
-    id: '3',
-    dateRange: '2017-2019',
-    company: 'DevHouse 外包工厂',
-    role: '初级开发',
-    tags: ['jQuery', 'PHP', 'MySQL'],
-    properties: { legacy: true, maintenance: '维护旧系统' }
-  },
-];
+import { CareerNode } from '../services/lattice/types';
+import { fetchCareerNodes } from '../services/lattice/career';
+import { Skeleton, message } from 'antd';
 
 const JsonCell: React.FC<{ data: Record<string, any> }> = ({ data }) => {
   const [isOpen, setIsOpen] = useState(false);
@@ -40,7 +14,7 @@ const JsonCell: React.FC<{ data: Record<string, any> }> = ({ data }) => {
         className="flex items-center gap-2 text-xs font-mono text-primary hover:text-emerald-400 transition-colors"
       >
         <Code size={12} />
-        {Object.keys(data).length} 属性
+        {Object.keys(data || {}).length} 属性
       </button>
       
       {isOpen && (
@@ -58,6 +32,16 @@ const JsonCell: React.FC<{ data: Record<string, any> }> = ({ data }) => {
 };
 
 export const CareerNodes: React.FC = () => {
+  const [nodes, setNodes] = useState<CareerNode[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchCareerNodes()
+      .then(setNodes)
+      .catch(() => message.error('获取职业节点失败'))
+      .finally(() => setLoading(false));
+  }, []);
+
   return (
     <div className="space-y-4">
       {/* Header / Actions */}
@@ -85,47 +69,51 @@ export const CareerNodes: React.FC = () => {
       {/* Table Surface */}
       <div className="bg-surface rounded-lg border border-border overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full text-left text-sm">
-            <thead className="bg-slate-900/50 border-b border-border text-slate-400 font-medium uppercase text-xs tracking-wider">
-              <tr>
-                <th className="px-6 py-4">时间范围</th>
-                <th className="px-6 py-4">公司/组织</th>
-                <th className="px-6 py-4">角色/职位</th>
-                <th className="px-6 py-4">技术标签</th>
-                <th className="px-6 py-4">元数据 (JSON)</th>
-                <th className="px-6 py-4 text-right">操作</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-border">
-              {MOCK_DATA.map((node) => (
-                <tr key={node.id} className="hover:bg-slate-700/20 transition-colors">
-                  <td className="px-6 py-4 font-mono text-slate-400">{node.dateRange}</td>
-                  <td className="px-6 py-4 font-medium text-slate-200">{node.company}</td>
-                  <td className="px-6 py-4 text-slate-300">{node.role}</td>
-                  <td className="px-6 py-4">
-                    <div className="flex flex-wrap gap-1">
-                      {node.tags.map(tag => (
-                        <span key={tag} className="px-2 py-0.5 rounded-full bg-slate-800 border border-slate-700 text-xs text-slate-400">
-                          {tag}
-                        </span>
-                      ))}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4">
-                    <JsonCell data={node.properties} />
-                  </td>
-                  <td className="px-6 py-4 text-right">
-                    <button className="text-slate-500 hover:text-primary transition-colors">
-                      <MoreHorizontal size={18} />
-                    </button>
-                  </td>
+          {loading ? (
+            <div className="p-10"><Skeleton active /></div>
+          ) : (
+            <table className="w-full text-left text-sm">
+              <thead className="bg-slate-900/50 border-b border-border text-slate-400 font-medium uppercase text-xs tracking-wider">
+                <tr>
+                  <th className="px-6 py-4">时间</th>
+                  <th className="px-6 py-4">类型</th>
+                  <th className="px-6 py-4">原始内容</th>
+                  <th className="px-6 py-4">技术标签</th>
+                  <th className="px-6 py-4">元数据 (JSON)</th>
+                  <th className="px-6 py-4 text-right">操作</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody className="divide-y divide-border">
+                {nodes.map((node) => (
+                  <tr key={node.id} className="hover:bg-slate-700/20 transition-colors">
+                    <td className="px-6 py-4 font-mono text-slate-400">{new Date(node.createdAt).toLocaleDateString()}</td>
+                    <td className="px-6 py-4 font-medium text-slate-200">{node.type}</td>
+                    <td className="px-6 py-4 text-slate-300 truncate max-w-xs">{node.rawContent}</td>
+                    <td className="px-6 py-4">
+                      <div className="flex flex-wrap gap-1">
+                        {(node.tags || []).map(tag => (
+                          <span key={tag} className="px-2 py-0.5 rounded-full bg-slate-800 border border-slate-700 text-xs text-slate-400">
+                            {tag}
+                          </span>
+                        ))}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <JsonCell data={node.structuredData} />
+                    </td>
+                    <td className="px-6 py-4 text-right">
+                      <button className="text-slate-500 hover:text-primary transition-colors">
+                        <MoreHorizontal size={18} />
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
         </div>
         <div className="px-6 py-4 border-t border-border flex justify-between items-center text-xs text-slate-500">
-          <span>显示 3 条中的 1-3 条</span>
+          <span>显示 {nodes.length} 条数据</span>
           <div className="flex gap-1">
             <button className="px-3 py-1 bg-slate-800 rounded border border-slate-700 disabled:opacity-50">上一页</button>
             <button className="px-3 py-1 bg-slate-800 rounded border border-slate-700">下一页</button>

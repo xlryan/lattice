@@ -75,6 +75,28 @@ public class WealthService {
         return wealthRepository.save(entry);
     }
 
+    public List<FireflyClient.BalanceEntry> fetchAssetAllocation() {
+        return fireflyClient.fetchBalances().entries();
+    }
+
+    public List<MonthlyExpense> fetchMonthlyExpenses() {
+        // Mocking monthly expenses for now as Firefly might need complex queries
+        return List.of(
+                new MonthlyExpense("2025-07", new BigDecimal("1200.00")),
+                new MonthlyExpense("2025-08", new BigDecimal("1500.00")),
+                new MonthlyExpense("2025-09", new BigDecimal("1100.00")),
+                new MonthlyExpense("2025-10", new BigDecimal("2300.00")),
+                new MonthlyExpense("2025-11", new BigDecimal("1800.00")),
+                new MonthlyExpense("2025-12", new BigDecimal("2100.00"))
+        );
+    }
+
+    public List<FireflyClient.FireflyTransactionItem> fetchTransactions() {
+        return fireflyClient.fetchTransactions();
+    }
+
+    public record MonthlyExpense(String month, BigDecimal amount) {}
+
     private List<Double> toList(float[] embedding) {
         if (embedding == null) return List.of();
         List<Double> list = new ArrayList<>(embedding.length);

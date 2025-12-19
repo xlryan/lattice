@@ -8,3 +8,7 @@ export async function fetchAssetAllocation(): Promise<AssetAllocationItem[]> {
 export async function fetchMonthlyExpenses(): Promise<MonthlyExpenseItem[]> {
   return request('/wealth/expenses/monthly');
 }
+
+export async function fetchTransactions(): Promise<FinanceRecord[]> {
+  return request('/wealth/transactions');
+}
