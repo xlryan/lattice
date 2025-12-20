@@ -1,11 +1,8 @@
 package com.lattice.core.repository.build;
 
 import com.lattice.core.domain.build.BuildArtifact;
-import com.lattice.core.domain.support.DoubleVectorConverter;
-import com.pgvector.PGvector;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
-import jakarta.persistence.Query;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -13,23 +10,25 @@ import java.util.List;
 @Repository
 public class BuildArtifactRepositoryImpl implements BuildArtifactRepositoryCustom {
 
-    private final DoubleVectorConverter converter = new DoubleVectorConverter();
-
     @PersistenceContext
     private EntityManager entityManager;
 
     @Override
     public List<BuildArtifact> semanticSearch(List<Double> embedding, int limit) {
-        String sql = "select * from lattice.lattice_build_artifacts order by embedding <=> :vector";
-        Query query = entityManager.createNativeQuery(sql, BuildArtifact.class);
-        PGvector pgVector = converter.convertToDatabaseColumn(embedding);
-        if (pgVector == null) {
-            throw new IllegalArgumentException("查询向量不能为空");
+        // 1. 将 List<Double> 转换为 float[]
+        // Hibernate Vector 原生偏好 float[]，这样性能最好
+        float[] vectorArray = new float[embedding.size()];
+        for (int i = 0; i < embedding.size(); i++) {
+            vectorArray[i] = embedding.get(i).floatValue();
         }
-        query.setParameter("vector", pgVector);
-        query.setMaxResults(limit);
-        @SuppressWarnings("unchecked")
-        List<BuildArtifact> results = query.getResultList();
-        return results;
+
+        // 2. 使用 JPQL 查询
+        // l2_distance 对应 SQL 中的 <=> 操作符
+        String hpql = "select b from BuildArtifact b order by l2_distance(b.embedding, :vector)";
+
+        return entityManager.createQuery(hpql, BuildArtifact.class)
+                .setParameter("vector", vectorArray)
+                .setMaxResults(limit)
+                .getResultList();
     }
 }

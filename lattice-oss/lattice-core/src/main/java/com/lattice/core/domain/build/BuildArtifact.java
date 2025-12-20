@@ -1,8 +1,8 @@
 package com.lattice.core.domain.build;
 
-import com.lattice.core.infrastructure.persistence.VectorType;
 import com.lattice.core.tenancy.BaseTenantEntity;
 import jakarta.persistence.Column;
+import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -10,7 +10,6 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.JdbcTypeCode;
-import org.hibernate.annotations.Type;
 import org.hibernate.type.SqlTypes;
 
 import java.time.Instant;
@@ -49,8 +48,8 @@ public class BuildArtifact extends BaseTenantEntity {
     @Column(name = "attributes", nullable = false, columnDefinition = "jsonb")
     private Map<String, Object> attributes;
 
-    @Type(VectorType.class)
-    @Column(name = "embedding", columnDefinition = "vector(1536)")
+    @JdbcTypeCode(SqlTypes.VECTOR)
+    @Column(name = "embedding", columnDefinition = "vector(384)")
     private List<Double> embedding;
 
     @JdbcTypeCode(SqlTypes.ARRAY)

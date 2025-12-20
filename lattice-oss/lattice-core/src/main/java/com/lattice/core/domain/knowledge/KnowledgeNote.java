@@ -1,6 +1,6 @@
 package com.lattice.core.domain.knowledge;
 
-import com.lattice.core.infrastructure.persistence.VectorType;
+import com.lattice.core.domain.support.VectorUtils;
 import com.lattice.core.tenancy.BaseTenantEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -8,7 +8,6 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.JdbcTypeCode;
-import org.hibernate.annotations.Type;
 import org.hibernate.type.SqlTypes;
 
 import java.time.Instant;
@@ -37,9 +36,9 @@ public class KnowledgeNote extends BaseTenantEntity {
     @Column(name = "metadata", nullable = false, columnDefinition = "jsonb")
     private Map<String, Object> metadata;
 
-    @Type(VectorType.class)
-    @Column(name = "embedding", columnDefinition = "vector(1536)")
-    private List<Double> embedding;
+    @JdbcTypeCode(SqlTypes.VECTOR)
+    @Column(name = "embedding", columnDefinition = "vector(384)")
+    private float[] embedding;
 
     @JdbcTypeCode(SqlTypes.ARRAY)
     @Column(name = "tags", columnDefinition = "text[]")
@@ -81,7 +80,7 @@ public class KnowledgeNote extends BaseTenantEntity {
         return metadata;
     }
 
-    public List<Double> getEmbedding() {
+    public float[] getEmbedding() {
         return embedding;
     }
 
@@ -98,7 +97,7 @@ public class KnowledgeNote extends BaseTenantEntity {
         private String title;
         private String content;
         private Map<String, Object> metadata = Map.of();
-        private List<Double> embedding;
+        private float[] embedding;
         private List<String> tags = new ArrayList<>();
 
         public Builder title(String title) {
@@ -117,7 +116,7 @@ public class KnowledgeNote extends BaseTenantEntity {
         }
 
         public Builder embedding(List<Double> embedding) {
-            this.embedding = embedding;
+            this.embedding = VectorUtils.toFloatArray(embedding);
             return this;
         }
 

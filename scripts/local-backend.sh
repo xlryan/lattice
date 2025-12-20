@@ -9,6 +9,13 @@ echo "========================================="
 echo "   Starting Lattice Backend (Local)      "
 echo "========================================="
 
+# Kill existing process on port 8080
+PID=$(lsof -ti :8080)
+if [ -n "$PID" ]; then
+  echo "Killing existing process on port 8080 (PID: $PID)..."
+  kill -9 $PID
+fi
+
 # Check Java
 if [ ! -d "$JAVA_HOME" ]; then
   echo "Error: JAVA_HOME not found at $JAVA_HOME"

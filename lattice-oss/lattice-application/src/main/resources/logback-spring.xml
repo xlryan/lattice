@@ -1,25 +1,19 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <configuration scan="true" scanPeriod="30 seconds">
 
-    <!-- Properties -->
     <property name="LOG_PATH" value="logs" />
     <property name="APP_NAME" value="lattice-backend" />
-    
-    <!-- Colors for Console -->
+
     <conversionRule conversionWord="clr" converterClass="org.springframework.boot.logging.logback.ColorConverter" />
     <conversionRule conversionWord="wex" converterClass="org.springframework.boot.logging.logback.WhitespaceThrowableProxyConverter" />
     <conversionRule conversionWord="wEx" converterClass="org.springframework.boot.logging.logback.ExtendedWhitespaceThrowableProxyConverter" />
 
-    <!-- Patterns -->
-    <!-- Console: Time, Thread, Level (Colored), Logger (Shortened), Msg, Context -->
-    <property name="CONSOLE_LOG_PATTERN" 
-              value="${CONSOLE_LOG_PATTERN:-%clr(%d{yyyy-MM-dd HH:mm:ss.SSS}){faint} %clr(${LOG_LEVEL_PATTERN:-%5p}) %clr(${PID:- }){magenta} %clr(---){faint} %clr([%15.15t]){faint} %clr(%-40.40logger{39}){cyan} %clr(:){faint} %m%n${LOG_EXCEPTION_CONVERSION_WORD:-%wEx}}"/>
+    <property name="CONSOLE_LOG_PATTERN"
+              value="%clr(%d{HH:mm:ss.SSS}){faint} %highlight(%-5level) %clr([%6.10t]){faint} %clr(%-40.40logger{36}){cyan} %clr(:){faint} %X %m%n${LOG_EXCEPTION_CONVERSION_WORD:-%wEx}"/>
 
-    <!-- File: Time, Thread, Level, Logger, Msg -->
-    <property name="FILE_LOG_PATTERN" 
-              value="%d{yyyy-MM-dd HH:mm:ss.SSS} ${LOG_LEVEL_PATTERN:-%5p} ${PID:- } --- [%t] %-40.40logger{39} : %m%n${LOG_EXCEPTION_CONVERSION_WORD:-%wEx}"/>
+    <property name="FILE_LOG_PATTERN"
+              value="%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level ${PID:- } --- [%t] %-40.40logger{36} : %X %m%n${LOG_EXCEPTION_CONVERSION_WORD:-%wEx}"/>
 
-    <!-- Console Appender -->
     <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
         <encoder>
             <pattern>${CONSOLE_LOG_PATTERN}</pattern>
@@ -27,7 +21,6 @@
         </encoder>
     </appender>
 
-    <!-- Rolling File Appender (Info+) -->
     <appender name="FILE_INFO" class="ch.qos.logback.core.rolling.RollingFileAppender">
         <file>${LOG_PATH}/${APP_NAME}-info.log</file>
         <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
@@ -45,7 +38,6 @@
         </filter>
     </appender>
 
-    <!-- Rolling File Appender (Error only) -->
     <appender name="FILE_ERROR" class="ch.qos.logback.core.rolling.RollingFileAppender">
         <file>${LOG_PATH}/${APP_NAME}-error.log</file>
         <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
@@ -62,34 +54,29 @@
         </filter>
     </appender>
 
-    <!-- Async Appender for Performance -->
     <appender name="ASYNC_INFO" class="ch.qos.logback.classic.AsyncAppender">
         <discardingThreshold>0</discardingThreshold>
-        <queueSize>256</queueSize>
+        <queueSize>512</queueSize> <includeCallerData>false</includeCallerData>
         <appender-ref ref="FILE_INFO" />
     </appender>
 
     <appender name="ASYNC_ERROR" class="ch.qos.logback.classic.AsyncAppender">
         <discardingThreshold>0</discardingThreshold>
-        <queueSize>256</queueSize>
-        <appender-ref ref="FILE_ERROR" />
+        <queueSize>512</queueSize>
+        <includeCallerData>true</includeCallerData> <appender-ref ref="FILE_ERROR" />
     </appender>
 
-    <!-- Log Levels -->
-    <!-- Frameworks -->
     <logger name="org.springframework" level="INFO"/>
-    <logger name="org.springframework.web" level="INFO"/>
     <logger name="org.hibernate" level="INFO"/>
     <logger name="com.zaxxer.hikari" level="INFO"/>
-    <logger name="org.flywaydb" level="INFO"/>
-    
-    <!-- Application -->
-    <logger name="com.lattice" level="DEBUG"/> <!-- Debug level for our own code during dev -->
 
-    <!-- Specific noisy loggers -->
+    <logger name="com.lattice" level="DEBUG"/>
+
     <logger name="org.hibernate.engine.internal.StatisticalLoggingSessionEventListener" level="OFF"/>
+    <logger name="org.apache.catalina.startup.DigesterFactory" level="ERROR"/>
+    <logger name="org.apache.catalina.util.LifecycleBase" level="ERROR"/>
+    <logger name="org.apache.coyote.http11.Http11NioProtocol" level="WARN"/>
 
-    <!-- Root Logger -->
     <root level="INFO">
         <appender-ref ref="CONSOLE" />
         <appender-ref ref="ASYNC_INFO" />

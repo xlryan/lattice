@@ -5,6 +5,7 @@ from app.config import settings
 from app.core.model_loader import model_engine
 from app.core.processor import DocumentProcessor
 from app.schemas.response import AnalysisResult
+from app.schemas.request import EmbedRequest
 
 # 配置日志格式
 logging.basicConfig(
@@ -32,6 +33,15 @@ app = FastAPI(
 async def health_check():
     """健康检查接口 (Docker/K8s 使用)"""
     return {"status": "healthy", "config": settings.APP_NAME}
+
+@app.post("/engine/embed")
+async def embed_text(request: EmbedRequest):
+    """
+    文本向量化接口
+    """
+    nlp = model_engine.get_nlp_model()
+    embedding = nlp.encode(request.text).tolist()
+    return {"vector": embedding}
 
 @app.post("/engine/analyze", response_model=AnalysisResult)
 async def analyze_document(file: UploadFile = File(...)):

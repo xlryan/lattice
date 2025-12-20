@@ -8,6 +8,13 @@ PIP_MIRROR="https://pypi.tuna.tsinghua.edu.cn/simple"
 
 echo "🚀 正在检查环境并启动 Lattice Python Engine..."
 
+# Kill existing process on PORT
+PID=$(lsof -ti :$PORT)
+if [ -n "$PID" ]; then
+  echo "Killing existing process on port $PORT (PID: $PID)..."
+  kill -9 $PID
+fi
+
 # 1. 定位 Conda
 if [ -z "$CONDA_EXE" ]; then
     CONDA_EXE=$(command -v conda)

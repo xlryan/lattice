@@ -30,7 +30,7 @@ public class HybridRetrievalService implements RetrievalService {
     @Transactional(readOnly = true)
     public SearchResponse search(SearchRequest request) {
         long start = System.currentTimeMillis();
-        float[] queryVector = embeddingService.toVector(request.query());
+        List<Double> queryVector = embeddingService.toVector(request.query());
         FilterExpression filter = request.filter();
         SqlFragment fragment = filter != null ? filter.toSqlFragment("p") : null;
         Map<String, Object> params = fragment != null ? fragment.parameters() : Collections.emptyMap();

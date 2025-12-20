@@ -1,9 +1,8 @@
 package com.lattice.core.repository;
 
-import com.lattice.core.domain.support.VectorAttributeConverter;
 import com.lattice.core.repository.query.HybridSearchCriteria;
 import com.lattice.core.repository.query.LatticeNodeSearchResult;
-import com.pgvector.PGvector;
+import com.lattice.core.repository.support.PgvectorParameter;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import jakarta.persistence.Query;
@@ -19,9 +18,6 @@ import java.util.UUID;
  */
 @Repository
 public class LatticeNodeQueryRepositoryImpl implements LatticeNodeQueryRepository {
-
-    private final VectorAttributeConverter converter = new VectorAttributeConverter();
-
     @PersistenceContext
     private EntityManager entityManager;
 
@@ -40,11 +36,7 @@ public class LatticeNodeQueryRepositoryImpl implements LatticeNodeQueryRepositor
         Query query = entityManager.createNativeQuery(sql.toString());
         query.setParameter("domain", criteria.domain().name());
         query.setParameter("limit", criteria.limit());
-        PGvector vector = converter.convertToDatabaseColumn(criteria.queryEmbedding());
-        if (vector == null) {
-            throw new IllegalArgumentException("查询向量不能为空");
-        }
-        query.setParameter("query_embedding", vector);
+        query.setParameter("query_embedding", PgvectorParameter.from(criteria.queryEmbedding()));
         Map<String, Object> params = criteria.parameters();
         if (params != null) {
             params.forEach(query::setParameter);

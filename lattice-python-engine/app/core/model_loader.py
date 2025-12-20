@@ -1,4 +1,6 @@
 import logging
+import os
+os.environ['HF_ENDPOINT'] = 'https://hf-mirror.com'
 from sentence_transformers import SentenceTransformer
 from paddleocr import PaddleOCR
 from app.config import settings

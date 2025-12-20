@@ -1,7 +1,7 @@
 package com.lattice.core.domain.wealth;
 
+import com.lattice.core.domain.support.VectorUtils;
 import com.lattice.core.tenancy.BaseTenantEntity;
-import com.lattice.core.infrastructure.persistence.VectorType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -10,7 +10,6 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.JdbcTypeCode;
-import org.hibernate.annotations.Type;
 import org.hibernate.type.SqlTypes;
 
 import java.math.BigDecimal;
@@ -61,9 +60,9 @@ public class WealthEntry extends BaseTenantEntity {
     @Column(name = "occurred_on")
     private LocalDate occurredOn;
 
-    @Type(VectorType.class)
-    @Column(name = "embedding", columnDefinition = "vector(1536)")
-    private List<Double> embedding;
+    @JdbcTypeCode(SqlTypes.VECTOR)
+    @Column(name = "embedding", columnDefinition = "vector(384)")
+    private float[] embedding;
 
     @JdbcTypeCode(SqlTypes.ARRAY)
     @Column(name = "tags", columnDefinition = "text[]")
@@ -125,7 +124,7 @@ public class WealthEntry extends BaseTenantEntity {
         return occurredOn;
     }
 
-    public List<Double> getEmbedding() {
+    public float[] getEmbedding() {
         return embedding;
     }
 
@@ -146,7 +145,7 @@ public class WealthEntry extends BaseTenantEntity {
         private BigDecimal amount;
         private String currency;
         private LocalDate occurredOn;
-        private List<Double> embedding;
+        private float[] embedding;
         private List<String> tags = new ArrayList<>();
 
         public Builder entryType(EntryType entryType) {
@@ -185,7 +184,7 @@ public class WealthEntry extends BaseTenantEntity {
         }
 
         public Builder embedding(List<Double> embedding) {
-            this.embedding = embedding;
+            this.embedding = VectorUtils.toFloatArray(embedding);
             return this;
         }
 

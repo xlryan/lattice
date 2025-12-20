@@ -1,5 +1,7 @@
 package com.lattice.retrieval.service;
 
+import java.util.List;
+
 public interface QueryEmbeddingService {
-    float[] toVector(String queryText);
+    List<Double> toVector(String queryText);
 }

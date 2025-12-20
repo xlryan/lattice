@@ -3,6 +3,7 @@ package com.lattice.core.application.career;
 import com.lattice.core.application.career.dto.StarRecord;
 import com.lattice.core.domain.career.CareerNode;
 import com.lattice.core.domain.career.CareerType;
+import com.lattice.core.infrastructure.client.PythonEngineClient;
 import com.lattice.core.infrastructure.observability.AiUsageMonitor;
 import com.lattice.core.infrastructure.prompt.PromptRegistry;
 import com.lattice.core.infrastructure.logging.TraceContextHolder;
@@ -15,12 +16,10 @@ import org.springframework.ai.chat.model.ChatResponse;
 import org.springframework.ai.chat.model.Generation;
 import org.springframework.ai.chat.prompt.PromptTemplate;
 import org.springframework.ai.converter.BeanOutputConverter;
-import org.springframework.ai.embedding.EmbeddingModel;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -34,7 +33,7 @@ public class CareerService {
 
     private final CareerRepository repository;
     private final ChatModel chatModel;
-    private final EmbeddingModel embeddingModel;
+    private final PythonEngineClient pythonEngineClient;
     private final BeanOutputConverter<StarRecord> starOutputConverter = new BeanOutputConverter<>(StarRecord.class);
     private final PromptRegistry promptRegistry;
     private final AiUsageMonitor aiUsageMonitor;
@@ -45,7 +44,7 @@ public class CareerService {
         log.info("[traceId={}] Creating career node type={} tagCount={}",
                 TraceContextHolder.currentTraceId(), type, tags == null ? 0 : tags.size());
         Map<String, Object> structured = generateStarJson(rawText);
-        List<Double> embedding = toList(embeddingModel.embed(rawText));
+        List<Double> embedding = pythonEngineClient.embed(rawText);
         CareerNode node = CareerNode.builder()
                 .type(type)
                 .rawContent(rawText)
@@ -63,7 +62,7 @@ public class CareerService {
 
     @Transactional(readOnly = true)
     public List<CareerNode> semanticSearch(String query, int limit) {
-        List<Double> vector = toList(embeddingModel.embed(query));
+        List<Double> vector = pythonEngineClient.embed(query);
         int resolvedLimit = Math.max(1, Math.min(limit, 20));
         return repository.semanticSearch(vector, resolvedLimit);
     }
@@ -102,14 +101,5 @@ public class CareerService {
                     usage.getPromptTokens() == null ? 0 : usage.getPromptTokens(),
                     usage.getCompletionTokens() == null ? 0 : usage.getCompletionTokens());
         }
-    }
-
-    private List<Double> toList(float[] embedding) {
-        if (embedding == null) return List.of();
-        List<Double> list = new ArrayList<>(embedding.length);
-        for (float f : embedding) {
-            list.add((double) f);
-        }
-        return list;
     }
 }

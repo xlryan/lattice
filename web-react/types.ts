@@ -14,6 +14,12 @@ export interface ChatMessage {
   timestamp: number;
 }
 
+export interface ChatSession {
+  id: string;
+  title: string;
+  updatedAt: string;
+}
+
 export interface SearchResult {
   id: string;
   title: string;

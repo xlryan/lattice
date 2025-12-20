@@ -3,9 +3,9 @@ spring:
     name: lattice
   autoconfigure:
     exclude:
-      - org.springframework.ai.model.ollama.autoconfigure.OllamaChatAutoConfiguration
-      - org.springframework.ai.model.ollama.autoconfigure.OllamaEmbeddingAutoConfiguration
+      - org.springframework.ai.model.deepseek.autoconfigure.DeepSeekChatAutoConfiguration
       - org.springframework.ai.model.openai.autoconfigure.OpenAiChatAutoConfiguration
+      - org.springframework.ai.model.openai.autoconfigure.OpenAiEmbeddingAutoConfiguration
       - org.springframework.ai.model.openai.autoconfigure.OpenAiAudioSpeechAutoConfiguration
       - org.springframework.ai.model.openai.autoconfigure.OpenAiAudioTranscriptionAutoConfiguration
       - org.springframework.ai.model.openai.autoconfigure.OpenAiImageAutoConfiguration
@@ -27,6 +27,7 @@ spring:
     open-in-view: false
     properties:
       hibernate:
+        default_schema: lattice
         format_sql: true
         jdbc.lob.non_contextual_creation: true
   flyway:
@@ -48,11 +49,11 @@ spring:
           temperature: 0.1
       embedding:
         options:
-          model: gpt-oss:20b
+          model: paraphrase-multilingual-MiniLM-L12-v2
     vectorstore:
       pgvector:
         initialize-schema: false
-        dimensions: 1536
+        dimensions: 384
 
 lattice:
   ai:
@@ -60,8 +61,8 @@ lattice:
       base-url: ${OLLAMA_BASE_URL:http://localhost:11434}
       model: gpt-oss:20b
     embedding:
-      base-url: ${OLLAMA_BASE_URL:http://localhost:11434}
-      model: gpt-oss:20b
+      base-url: ${PY_WORKER_BASE_URL:http://python-worker:8081}
+      model: paraphrase-multilingual-MiniLM-L12-v2
   wealth:
     firefly:
       base-url: ${FIREFLY_BASE_URL:http://firefly:8080}
@@ -81,7 +82,7 @@ lattice:
       title: ${NTFY_TITLE:Lattice 新节点}
       priority: ${NTFY_PRIORITY:3}
   python-worker:
-    base-url: ${PY_WORKER_BASE_URL:http://python-worker:8081}
+    base-url: ${PY_WORKER_BASE_URL:http://127.0.0.1:8000}
   security:
     jwt:
       secret: ${LATTICE_JWT_SECRET:lattice-secret-please-change}
@@ -122,5 +123,10 @@ management:
       probability: 1.0
 
 logging:
+  level:
+    com.lattice: DEBUG
+    org.springframework.ai: DEBUG
+    org.hibernate.SQL: DEBUG
+    org.hibernate.type.descriptor.sql.BasicBinder: TRACE
   pattern:
     level: "%5p [traceId=%X{traceId} spanId=%X{spanId}]"

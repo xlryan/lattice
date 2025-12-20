@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonPropertyDescription;
 import com.lattice.agent.finance.model.FireflyExpenseCommand;
 import com.lattice.agent.finance.service.FinanceCategoryMapper;
 import com.lattice.agent.finance.service.FireflyApiClient;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Description;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -17,6 +18,7 @@ import java.util.function.Function;
  * 声明 Spring AI Function Callback，让大模型具备记账执行能力。
  */
 @Configuration
+@Slf4j
 public class FinanceToolsConfig {
 
     public record TransactionRequest(
@@ -33,6 +35,7 @@ public class FinanceToolsConfig {
     public Function<TransactionRequest, String> createExpense(FireflyApiClient apiClient,
                                                               FinanceCategoryMapper mapper) {
         return request -> {
+            log.info("Tool 'createExpense' called with: {}", request);
             OffsetDateTime happenedAt = Optional.ofNullable(request.occurredAt())
                     .orElseGet(OffsetDateTime::now);
             FireflyExpenseCommand command = FireflyExpenseCommand.builder()
@@ -45,6 +48,7 @@ public class FinanceToolsConfig {
                     .currency(mapper.defaultCurrency())
                     .build();
             String transactionId = apiClient.createExpense(command);
+            log.info("Expense created successfully. ID: {}", transactionId);
             return "记账成功，交易 ID: " + transactionId;
         };
     }

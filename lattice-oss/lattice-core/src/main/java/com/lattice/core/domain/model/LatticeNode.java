@@ -2,10 +2,8 @@ package com.lattice.core.domain.model;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.lattice.core.domain.DomainType;
-import com.lattice.core.domain.support.VectorAttributeConverter;
 import com.lattice.core.tenancy.BaseTenantEntity;
 import jakarta.persistence.Column;
-import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -60,9 +58,8 @@ public class LatticeNode extends BaseTenantEntity {
     @Column(name = "properties", nullable = false, columnDefinition = "jsonb")
     private JsonNode properties;
 
-    @Convert(converter = VectorAttributeConverter.class)
-    @JdbcTypeCode(SqlTypes.VARCHAR)
-    @Column(name = "embedding", columnDefinition = "vector(1536)")
+    @JdbcTypeCode(SqlTypes.VECTOR)
+    @Column(name = "embedding", columnDefinition = "vector(384)")
     private float[] embedding;
 
     @JdbcTypeCode(SqlTypes.ARRAY)

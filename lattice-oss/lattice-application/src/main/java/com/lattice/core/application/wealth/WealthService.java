@@ -3,6 +3,7 @@ package com.lattice.core.application.wealth;
 import com.lattice.agent.config.FireflyProperties;
 import com.lattice.agent.finance.model.FireflyExpenseCommand;
 import com.lattice.core.domain.wealth.WealthEntry;
+import com.lattice.core.infrastructure.client.PythonEngineClient;
 import com.lattice.core.infrastructure.exception.ValidationException;
 import com.lattice.core.infrastructure.logging.TraceContextHolder;
 import com.lattice.core.infrastructure.tools.FireflyClient;
@@ -10,13 +11,11 @@ import com.lattice.core.infrastructure.tools.PythonWorkerClient;
 import com.lattice.core.repository.wealth.WealthRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.ai.embedding.EmbeddingModel;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.OffsetDateTime;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -32,7 +31,7 @@ public class WealthService {
     private final PythonWorkerClient pythonWorkerClient;
     private final FireflyClient fireflyClient;
     private final FireflyProperties fireflyProperties;
-    private final EmbeddingModel embeddingModel;
+    private final PythonEngineClient pythonEngineClient;
 
     @Transactional
     public WealthEntry ingestExpense(ExpenseCommand command) {
@@ -69,7 +68,7 @@ public class WealthService {
                 .amount(amount)
                 .currency(expenseCommand.currency())
                 .occurredOn(command.occurredAt().toLocalDate())
-                .embedding(toList(embeddingModel.embed(command.description())))
+                .embedding(pythonEngineClient.embed(command.description()))
                 .tags(command.tags())
                 .build();
         return wealthRepository.save(entry);
@@ -96,15 +95,6 @@ public class WealthService {
     }
 
     public record MonthlyExpense(String month, BigDecimal amount) {}
-
-    private List<Double> toList(float[] embedding) {
-        if (embedding == null) return List.of();
-        List<Double> list = new ArrayList<>(embedding.length);
-        for (float f : embedding) {
-            list.add((double) f);
-        }
-        return list;
-    }
 
     private void validateBudget(BigDecimal amount) {
         FireflyClient.BalanceSnapshot snapshot = fireflyClient.fetchBalances();

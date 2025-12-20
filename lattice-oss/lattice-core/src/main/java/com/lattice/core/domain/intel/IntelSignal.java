@@ -1,6 +1,6 @@
 package com.lattice.core.domain.intel;
 
-import com.lattice.core.infrastructure.persistence.VectorType;
+import com.lattice.core.domain.support.VectorUtils;
 import com.lattice.core.tenancy.BaseTenantEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -10,7 +10,6 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.JdbcTypeCode;
-import org.hibernate.annotations.Type;
 import org.hibernate.type.SqlTypes;
 
 import java.time.Instant;
@@ -53,9 +52,9 @@ public class IntelSignal extends BaseTenantEntity {
     @Column(name = "importance", nullable = false, length = 16)
     private SignalImportance importance;
 
-    @Type(VectorType.class)
-    @Column(name = "embedding", columnDefinition = "vector(1536)")
-    private List<Double> embedding;
+    @JdbcTypeCode(SqlTypes.VECTOR)
+    @Column(name = "embedding", columnDefinition = "vector(384)")
+    private float[] embedding;
 
     @JdbcTypeCode(SqlTypes.ARRAY)
     @Column(name = "tags", columnDefinition = "text[]")
@@ -107,7 +106,7 @@ public class IntelSignal extends BaseTenantEntity {
         return importance;
     }
 
-    public List<Double> getEmbedding() {
+    public float[] getEmbedding() {
         return embedding;
     }
 
@@ -126,7 +125,7 @@ public class IntelSignal extends BaseTenantEntity {
         private String rawPayload;
         private Map<String, Object> insight = Map.of();
         private SignalImportance importance = SignalImportance.MEDIUM;
-        private List<Double> embedding;
+        private float[] embedding;
         private List<String> tags = new ArrayList<>();
 
         public Builder source(String source) {
@@ -155,7 +154,7 @@ public class IntelSignal extends BaseTenantEntity {
         }
 
         public Builder embedding(List<Double> embedding) {
-            this.embedding = embedding;
+            this.embedding = VectorUtils.toFloatArray(embedding);
             return this;
         }
 

@@ -4,9 +4,11 @@ plugins {
 
 dependencies {
     api 'org.springframework.boot:spring-boot-starter-data-jpa'
+    api 'org.springframework.boot:spring-boot-starter-web'
     implementation 'org.springframework.boot:spring-boot-starter-validation'
     implementation 'org.springframework.boot:spring-boot-starter-json'
     implementation 'org.postgresql:postgresql'
+    implementation 'org.hibernate.orm:hibernate-vector:6.5.2.Final'
     implementation 'org.flywaydb:flyway-core'
     implementation 'org.flywaydb:flyway-database-postgresql'
     implementation 'com.pgvector:pgvector:0.1.5'

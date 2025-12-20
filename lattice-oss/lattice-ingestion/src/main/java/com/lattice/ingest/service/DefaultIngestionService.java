@@ -5,10 +5,11 @@ import com.lattice.core.domain.DomainType;
 import com.lattice.core.domain.model.LatticeNode;
 import com.lattice.core.notification.NodeNotification;
 import com.lattice.core.notification.NotificationPublisher;
+import com.lattice.core.domain.support.VectorUtils;
 import com.lattice.core.repository.LatticeNodeRepository;
 import com.lattice.core.service.NodeNormalizationService;
-import com.lattice.ingest.client.AnalysisResult;
-import com.lattice.ingest.client.PythonEngineClient;
+import com.lattice.core.infrastructure.client.AnalysisResult;
+import com.lattice.core.infrastructure.client.PythonEngineClient;
 import com.lattice.ingest.service.dto.IngestionResponse;
 import com.lattice.ingest.service.dto.TextIngestionRequest;
 import com.lattice.ingest.workflow.DomainClassifier;
@@ -20,6 +21,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
+import lombok.extern.slf4j.Slf4j;
 
 import java.time.Instant;
 import java.util.Collections;
@@ -33,6 +35,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
  */
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class DefaultIngestionService implements IngestionService {
 
     private final DomainClassifier domainClassifier;
@@ -72,9 +75,17 @@ public class DefaultIngestionService implements IngestionService {
     }
 
     private IngestionResponse processIngestion(DomainType domain, String content, String titleHint, List<String> tags) {
+        log.info("Processing ingestion for domain: {}, titleHint: {}", domain, titleHint);
+        
         JsonNode metadata = metadataWorkflow.extract(domain, content);
+        log.debug("Extracted metadata: {}", metadata);
+        
         JsonNode normalized = normalizationService.normalize(domain, metadata);
-        float[] embedding = embeddingGateway.embed(content);
+        log.debug("Normalized properties: {}", normalized);
+        
+        List<Double> embedding = embeddingGateway.embed(content);
+        log.info("Generated embedding with length: {}", (embedding != null ? embedding.size() : 0));
+        float[] embeddingVector = VectorUtils.toFloatArray(embedding);
 
         LatticeNode node = LatticeNode.builder()
                 .id(UUID.randomUUID())
@@ -82,11 +93,15 @@ public class DefaultIngestionService implements IngestionService {
                 .title(resolveTitle(titleHint, domain))
                 .content(content)
                 .properties(normalized)
-                .embedding(embedding)
+                .embedding(embeddingVector)
                 .tags(safeTags(tags))
                 .build();
 
-        repository.save(node);
+        log.info("Saving LatticeNode to repository: id={}, title='{}'", node.getId(), node.getTitle());
+        LatticeNode savedNode = repository.save(node);
+        repository.flush(); // 强制写入数据库
+        log.info("LatticeNode saved successfully. id={}", savedNode.getId());
+        
         notifyNodeCreated(node);
         return new IngestionResponse(node.getId(), domain.name());
     }

@@ -10,7 +10,7 @@ import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.ai.chat.model.ChatResponse;
 import org.springframework.ai.chat.model.Generation;
 import org.springframework.ai.chat.prompt.Prompt;
-import org.springframework.ai.openai.OpenAiChatOptions;
+import org.springframework.ai.ollama.api.OllamaChatOptions;
 
 import java.util.List;
 
@@ -47,10 +47,10 @@ class LatticeAgentServiceTest {
         verify(chatModel).call(promptCaptor.capture());
         
         Prompt capturedPrompt = promptCaptor.getValue();
-        assertThat(capturedPrompt.getOptions()).isInstanceOf(OpenAiChatOptions.class);
+        assertThat(capturedPrompt.getOptions()).isInstanceOf(OllamaChatOptions.class);
         
-        OpenAiChatOptions options = (OpenAiChatOptions) capturedPrompt.getOptions();
-        assertThat(options.getFunctions()).contains("createExpense", "searchLattice");
+        OllamaChatOptions options = (OllamaChatOptions) capturedPrompt.getOptions();
+        assertThat(options.getToolNames()).contains("createExpense", "searchLattice", "saveNote");
         
         // 验证提示词内容
         String fullPrompt = capturedPrompt.getInstructions().get(0).getContent();

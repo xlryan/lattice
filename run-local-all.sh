@@ -11,6 +11,16 @@ echo "========================================="
 echo "   Lattice: Starting ALL Local Services  "
 echo "========================================="
 
+# Global cleanup
+echo "Ensuring ports are free..."
+for PORT in 8080 8000 3000; do
+    PID=$(lsof -ti :$PORT)
+    if [ -n "$PID" ]; then
+        echo "Killing lingering process on port $PORT (PID: $PID)..."
+        kill -9 $PID
+    fi
+done
+
 SCRIPT_DIR="$(dirname "$0")"
 
 # 1. Backend

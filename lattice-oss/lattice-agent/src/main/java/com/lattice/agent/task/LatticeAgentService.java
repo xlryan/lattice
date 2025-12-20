@@ -9,7 +9,7 @@ import org.springframework.ai.chat.messages.UserMessage;
 import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.ai.chat.model.ChatResponse;
 import org.springframework.ai.chat.prompt.Prompt;
-import org.springframework.ai.openai.OpenAiChatOptions;
+import org.springframework.ai.ollama.api.OllamaChatOptions;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -31,36 +31,43 @@ public class LatticeAgentService {
      * @return AI 的响应（可能包含执行结果）
      */
     public String execute(String query) {
-        log.info("Lattice Agent receiving query: {}", query);
+        log.info("Lattice Agent executing query: {}", query);
 
         SystemMessage systemMessage = new SystemMessage("""
                 你是一个名为 Lattice (晶格) 的个人助手。
                 
-                你可以通过调用以下函数来辅助回答：
+                你具备以下能力：
                 1. 'createExpense': 当用户提到要记账或记录支出时调用。
                 2. 'searchLattice': 当用户询问关于他们生活记录、职业、DIY 项目等库中已有的信息时调用。
+                3. 'saveNote': 当用户想要记录普通的笔记、想法、日记、或者任何非财务类的记录时调用。
                 
-                处理流程：
-                - 优先判断是否需要执行操作（如记账）。
-                - 如果问题涉及背景知识，请先使用 'searchLattice' 获取信息后再回答。
-                - 回答必须简洁，且如果是执行了操作，请务必返回确认信息。
+                交互规范：
+                - 如果用户的输入是操作指令（如下单、记账、存笔记），请务必调用相应的工具。
+                - 在工具调用返回结果后，请根据工具返回的内容，向用户发送一个友好的确认消息。
+                - 所有的回复请使用中文。
+                - 不要返回类似 "System: Please continue" 之类的调试信息。
                 """);
 
         UserMessage userMessage = new UserMessage(query);
 
         // 注册可用的函数列表
-        OpenAiChatOptions options = OpenAiChatOptions.builder()
-                .toolNames(java.util.Set.of("createExpense", "searchLattice"))
+        OllamaChatOptions options = OllamaChatOptions.builder()
+                .toolNames(java.util.Set.of("createExpense", "searchLattice", "saveNote"))
                 .build();
 
-
-
-
-
-
+        log.debug("Constructed prompt with tools: {}", options.getToolNames());
 
         ChatResponse response = chatModel.call(new Prompt(List.of(systemMessage, userMessage), options));
         
-        return response.getResult().getOutput().getText();
+        if (response == null || response.getResult() == null || response.getResult().getOutput() == null) {
+            log.error("Received null response from ChatModel");
+            return "抱歉，我现在无法处理您的请求。";
+        }
+
+        String output = response.getResult().getOutput().getText();
+        log.info("Final AI Output: {}", output);
+        log.debug("LLM Usage: {}", response.getMetadata().getUsage());
+        
+        return output;
     }
 }

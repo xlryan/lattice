@@ -5,6 +5,7 @@ plugins {
 dependencies {
     implementation project(':lattice-core')
     implementation project(':lattice-retrieval')
+    implementation project(':lattice-ingestion')
     implementation 'org.springframework.boot:spring-boot-starter'
     implementation 'org.springframework.boot:spring-boot-starter-web'
     implementation 'org.springframework.ai:spring-ai-starter-model-openai'

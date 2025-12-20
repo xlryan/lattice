@@ -2,6 +2,7 @@ package com.lattice.core.repository.query;
 
 import com.lattice.core.domain.DomainType;
 
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -11,7 +12,7 @@ public record HybridSearchCriteria(
         DomainType domain,
         String filterExpression,
         Map<String, Object> parameters,
-        float[] queryEmbedding,
+        List<Double> queryEmbedding,
         int limit,
         double minSimilarity
 ) {
