@@ -25,7 +25,7 @@ public class LatticeNodeQueryRepositoryImpl implements LatticeNodeQueryRepositor
     public List<LatticeNodeSearchResult> hybridSearch(HybridSearchCriteria criteria) {
         StringBuilder sql = new StringBuilder()
                 .append("select id, title, substring(content, 1, 360) as snippet, ")
-                .append("       (0.7 * (1 - (embedding <=> :query_embedding)) + ")
+                .append("       (0.7 * (1 - (embedding <=> cast(:query_embedding as vector))) + ")
                 .append("        0.3 * coalesce((properties->>'score')::double precision, 0)) as score ")
                 .append("from lattice.lattice_nodes where domain = :domain");
         if (criteria.filterExpression() != null && !criteria.filterExpression().isBlank()) {

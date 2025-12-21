@@ -95,6 +95,15 @@ public class CareerNode extends BaseTenantEntity {
         return createdAt;
     }
 
+    public void updateContent(String rawContent, Map<String, Object> structuredData, float[] embedding, List<String> tags) {
+        this.rawContent = rawContent;
+        this.structuredData = structuredData;
+        this.embedding = embedding;
+        if (tags != null && !tags.isEmpty()) {
+            this.tags = tags;
+        }
+    }
+
     public static final class Builder {
         private UUID id = UUID.randomUUID();
         private CareerType type;

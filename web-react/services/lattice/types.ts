@@ -39,7 +39,8 @@ export interface ChatMessage {
 
 export interface AgentResponse {
   intent: string;
-  reply: string;
+  message: string;
+  sessionId?: string;
 }
 
 export interface FinanceRecord {
@@ -60,4 +61,13 @@ export interface AssetAllocationItem {
 export interface MonthlyExpenseItem {
   month: string;
   amount: number;
+}
+
+export interface DashboardStats {
+  netWorth: string;
+  nodeCount: number;
+  activeProjects: number;
+  healthScore: number;
+  monthlyFlow: Array<{ name: string; income: number; expense: number }>;
+  recentUpdates: Array<{ id: string; content: string; time: string }>;
 }

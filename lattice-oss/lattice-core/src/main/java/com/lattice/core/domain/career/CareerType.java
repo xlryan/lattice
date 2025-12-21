@@ -7,5 +7,6 @@ public enum CareerType {
     WORK_LOG,
     PROJECT,
     RESUME_ITEM,
-    SKILL
+    SKILL,
+    INBOX_ITEM
 }

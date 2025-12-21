@@ -8,9 +8,9 @@ const request = extend({
   timeout: 20000,
   errorHandler: (error) => {
     const { response } = error;
-    if (response && response.status === 401) {
+    if (response && (response.status === 401 || response.status === 403)) {
       localStorage.removeItem(TOKEN_KEY);
-      message.error('登录已过期，请重新登录');
+      message.error('登录已过期或无权限，请重新登录');
       window.location.href = '/login';
     }
     throw error;
@@ -29,6 +29,13 @@ request.interceptors.request.use((url, options) => {
 });
 
 request.interceptors.response.use(async (response) => {
+  // Check for HTTP error statuses first
+  if (response.status === 401 || response.status === 403) {
+    const error: any = new Error(response.statusText);
+    error.response = response;
+    throw error;
+  }
+
   const cloned = response.clone();
   try {
     const data = await cloned.json();

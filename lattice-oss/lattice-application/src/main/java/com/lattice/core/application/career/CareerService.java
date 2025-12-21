@@ -3,6 +3,7 @@ package com.lattice.core.application.career;
 import com.lattice.core.application.career.dto.StarRecord;
 import com.lattice.core.domain.career.CareerNode;
 import com.lattice.core.domain.career.CareerType;
+import com.lattice.core.domain.support.VectorUtils;
 import com.lattice.core.infrastructure.client.PythonEngineClient;
 import com.lattice.core.infrastructure.observability.AiUsageMonitor;
 import com.lattice.core.infrastructure.prompt.PromptRegistry;
@@ -29,7 +30,7 @@ import java.util.Objects;
 @RequiredArgsConstructor
 public class CareerService {
 
-    private static final String STAR_PROMPT_KEY = "career.star";
+    private static final String STAR_PROMPT_KEY = "career-star";
 
     private final CareerRepository repository;
     private final ChatModel chatModel;
@@ -41,10 +42,27 @@ public class CareerService {
     @Transactional
     public CareerNode createLog(String rawText, CareerType type, List<String> tags) {
         Objects.requireNonNull(type, "type 不能为空");
-        log.info("[traceId={}] Creating career node type={} tagCount={}",
+        log.info("[traceId={}] Creating/Updating career node type={} tagCount={}",
                 TraceContextHolder.currentTraceId(), type, tags == null ? 0 : tags.size());
-        Map<String, Object> structured = generateStarJson(rawText);
+        
         List<Double> embedding = pythonEngineClient.embed(rawText);
+        
+        // 1. 语义查重：检查是否已有雷同内容 (相似度阈值 0.90)
+        List<CareerNode> existing = repository.semanticSearch(embedding, 1);
+        if (!existing.isEmpty()) {
+            CareerNode topMatch = existing.get(0);
+            double similarity = calculateSimilarity(embedding, topMatch.getEmbedding());
+            if (similarity > 0.90) {
+                log.info("Detected similar career node (similarity={}), refining existing record instead of creating new.", similarity);
+                
+                // 只有当新文本更长或显著不同时才更新，或者强制更新以重新提取结构
+                Map<String, Object> structured = generateStarJson(rawText);
+                topMatch.updateContent(rawText, structured, VectorUtils.toFloatArray(embedding), tags);
+                return repository.save(topMatch);
+            }
+        }
+
+        Map<String, Object> structured = generateStarJson(rawText);
         CareerNode node = CareerNode.builder()
                 .type(type)
                 .rawContent(rawText)
@@ -53,6 +71,19 @@ public class CareerService {
                 .tags(CollectionUtils.isEmpty(tags) ? List.of() : List.copyOf(tags))
                 .build();
         return repository.save(node);
+    }
+
+    private double calculateSimilarity(List<Double> v1, float[] v2) {
+        if (v1.size() != v2.length) return 0.0;
+        double dotProduct = 0.0;
+        double normA = 0.0;
+        double normB = 0.0;
+        for (int i = 0; i < v1.size(); i++) {
+            dotProduct += v1.get(i) * v2[i];
+            normA += Math.pow(v1.get(i), 2);
+            normB += Math.pow(v2[i], 2);
+        }
+        return dotProduct / (Math.sqrt(normA) * Math.sqrt(normB));
     }
 
     @Transactional(readOnly = true)

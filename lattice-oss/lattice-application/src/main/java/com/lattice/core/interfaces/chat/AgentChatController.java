@@ -43,21 +43,21 @@ public class AgentChatController {
     @Operation(summary = "Streaming agent conversation endpoint")
     @PostMapping(value = "/stream", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public SseEmitter chat(@RequestPart("message") @NotBlank String message,
-                           @RequestPart(value = "images", required = false) List<MultipartFile> images,
+                           @RequestPart(value = "attachments", required = false) List<MultipartFile> attachments,
                            @RequestParam(value = "sessionId", required = false) UUID sessionId,
                            Authentication authentication) throws IOException {
         // 0. 设置长超时时间 (0表示无限，或者设置 5分钟 = 300000L)
         SseEmitter emitter = new SseEmitter(0L);
 
         // 1. 主线程：预处理请求参数
-        List<PythonWorkerClient.ImagePayload> payloads = toPayloads(images);
+        List<PythonWorkerClient.ImagePayload> payloads = toPayloads(attachments);
         String username = authentication == null ? "anonymous" : authentication.getName();
         AgentRequest request = new AgentRequest(message, payloads, username);
 
         // 🌟 关键修复：捕获当前主线程的 TraceId
         String traceId = TraceContextHolder.currentTraceId();
 
-        log.info("[TraceId={}] 收到聊天请求 - 用户: {}, SessionId: {}, 图片数: {}",
+        log.info("[TraceId={}] 收到聊天请求 - 用户: {}, SessionId: {}, 附件数: {}",
                 traceId, username, sessionId, payloads.size());
 
         // 2. 异步执行：防止阻塞 Web 容器线程
@@ -67,6 +67,9 @@ public class AgentChatController {
 
             try {
                 log.info("异步处理开始 - 正在初始化会话...");
+
+                // 🌟 立即发送心跳，防止前端 fetch-event-source 因长时间无数据而重试
+                emitter.send(SseEmitter.event().name("message").data("..."));
 
                 // 3. 会话管理 (Session Management)
                 UUID finalSessionId;
@@ -130,12 +133,12 @@ public class AgentChatController {
         return emitter;
     }
 
-    private List<PythonWorkerClient.ImagePayload> toPayloads(List<MultipartFile> images) throws IOException {
-        if (images == null || images.isEmpty()) {
+    private List<PythonWorkerClient.ImagePayload> toPayloads(List<MultipartFile> attachments) throws IOException {
+        if (attachments == null || attachments.isEmpty()) {
             return List.of();
         }
         List<PythonWorkerClient.ImagePayload> payloads = new ArrayList<>();
-        for (MultipartFile file : images) {
+        for (MultipartFile file : attachments) {
             payloads.add(new PythonWorkerClient.ImagePayload(file.getBytes(), file.getOriginalFilename(), file.getContentType()));
         }
         return payloads;

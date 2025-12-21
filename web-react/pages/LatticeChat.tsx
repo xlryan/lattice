@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Send, User, Bot, StopCircle, MessageSquare, Plus, Clock } from 'lucide-react';
+import { Send, User, Bot, StopCircle, MessageSquare, Plus, Clock, Paperclip, X, FileText } from 'lucide-react';
 import { fetchEventSource } from '@microsoft/fetch-event-source';
 import ReactMarkdown from 'react-markdown';
 import { message as antdMessage } from 'antd';
@@ -16,11 +16,13 @@ export const LatticeChat: React.FC = () => {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
   const [isStreaming, setIsStreaming] = useState(false);
+  const [attachments, setAttachments] = useState<File[]>([]);
   
   // Refs
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
   const newSessionIdRef = useRef<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Initial Load
   useEffect(() => {
@@ -73,14 +75,35 @@ export const LatticeChat: React.FC = () => {
 
   const handleNewChat = () => {
     setCurrentSessionId(null);
+    setAttachments([]);
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files) {
+      const filesArray = Array.from(e.target.files);
+      setAttachments(prev => [...prev, ...filesArray]);
+    }
+  };
+
+  const removeAttachment = (index: number) => {
+    setAttachments(prev => prev.filter((_, i) => i !== index));
   };
 
   const handleSend = async () => {
-    if (!input.trim() || isStreaming) return;
+    if ((!input.trim() && attachments.length === 0) || isStreaming) return;
 
-    const userMsg: ChatMessage = { id: Date.now().toString(), role: 'user', content: input, timestamp: Date.now() };
+    const userMsg: ChatMessage = { 
+      id: Date.now().toString(), 
+      role: 'user', 
+      content: input, 
+      timestamp: Date.now() 
+    };
+    
+    // Optimistically update UI
     setMessages(prev => [...prev, userMsg]);
     setInput('');
+    const currentAttachments = [...attachments];
+    setAttachments([]);
     setIsStreaming(true);
 
     const assistantMsgId = (Date.now() + 1).toString();
@@ -92,8 +115,13 @@ export const LatticeChat: React.FC = () => {
     try {
       const controller = new AbortController();
       abortControllerRef.current = controller;
+      
       const formData = new FormData();
-      formData.append('message', userMsg.content);
+      formData.append('message', userMsg.content || (currentAttachments.length > 0 ? "[附件]" : ""));
+      
+      currentAttachments.forEach(file => {
+        formData.append('attachments', file);
+      });
       
       // Append sessionId if continuing a chat
       let url = '/api/chat/stream';
@@ -124,6 +152,11 @@ export const LatticeChat: React.FC = () => {
                     msg.id === assistantMsgId ? { ...msg, content: payload.data.message } : msg
                   ));
                 }
+              } else if (payload.message) {
+                // Handle error or other status messages
+                setMessages(prev => prev.map(msg =>
+                  msg.id === assistantMsgId ? { ...msg, content: `[Error: ${payload.message}]` } : msg
+                ));
               }
             } catch (e) {
               // Fallback
@@ -242,7 +275,34 @@ export const LatticeChat: React.FC = () => {
 
         {/* Input Area */}
         <div className="p-4 bg-background border-t border-border">
+          {attachments.length > 0 && (
+            <div className="flex flex-wrap gap-2 mb-2">
+              {attachments.map((file, index) => (
+                <div key={index} className="flex items-center gap-2 bg-slate-800 border border-slate-700 rounded px-2 py-1 text-xs text-slate-300">
+                  <FileText size={14} />
+                  <span className="max-w-[100px] truncate">{file.name}</span>
+                  <button onClick={() => removeAttachment(index)} className="text-slate-500 hover:text-red-400">
+                    <X size={14} />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
           <div className="relative flex items-center gap-2">
+            <button 
+              onClick={() => fileInputRef.current?.click()}
+              className="p-2 text-slate-400 hover:text-primary transition-colors bg-slate-900 border border-slate-700 rounded-md"
+              disabled={isStreaming}
+            >
+              <Paperclip size={18} />
+            </button>
+            <input 
+              type="file" 
+              ref={fileInputRef} 
+              className="hidden" 
+              onChange={handleFileChange} 
+              multiple 
+            />
             <input
               type="text"
               value={input}

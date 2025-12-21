@@ -65,8 +65,8 @@ lattice:
       model: paraphrase-multilingual-MiniLM-L12-v2
   wealth:
     firefly:
-      base-url: ${FIREFLY_BASE_URL:http://firefly:8080}
-      token: ${FIREFLY_API_TOKEN:change-me}
+      base-url: ${FIREFLY_BASE_URL:http://firefly:8082}
+      token: ${FIREFLY_API_TOKEN:eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJhdWQiOiIxIiwianRpIjoiNjE0MmY1MDczMjgyYjVjNDI4MTljYTI0YTI3YzlmZTk4ZmI1NWEwYjA4OGFkYWQxMWMwNzhkNmY2OTFiOTVkZWQyMjc5MWYzZWQzOWU4NWEiLCJpYXQiOjE3NjQ4OTk2NTcuMTgxNzQzLCJuYmYiOjE3NjQ4OTk2NTcuMTgxNzUsImV4cCI6MTc5NjQzNTY1Ni41ODgwOTYsInN1YiI6IjEiLCJzY29wZXMiOltdfQ.B08RRcbsEtJgqFTh0J9hA-xsiv7yOHcY6mTuzUcwiMwRvrTEFQa3eiEZhsbW7Y5upVxlPd3bmQKuOhrCg-7LUECtZXmdLykaVjIJ_9O0JTkiL4RIUn_pVcNklwBsp_UjxUPFnXUvLvaL3tIz8cgQ3qRZF7mnSRccfU2fLwb-563Ut6o7nW-x-iGKwyga6g-FsekLDGEeS-YaLcWvjTwoWPF7aF7ftYjwqilCjDJ-Ss9Coa-PJJTUtB8LxOykshxGMeSRyC2CRACpOYI5PScnZxEGDpj58U_bPBDLTlbaUFuRvGyxTWEOPtjzC8NOYWxyrpiIdj5OjbpgM1UesO7ZUfwpE3_hRSIf2zRP-_3kSvFGxwxQ5pQRuWAggtMIlztLaGA_qxPE7GpPL7hd1Gz7A-r6A2CC2keS9S8kQjMpLLwFsoRswrzx13Rct5oQhYV323Yal2qAq_SOcpmCWoVzcMmjABQbtBVqzMhIvOFvj6x9KeRfEZyeFqLCYUex1fo40pkEm0s6abBBZH3zUKF27uhEB52sF0GcAVudeE1J2nNqXT2nIfRf_ozqY0u19aBeea1o7gITrgoyaywecOEW9EhV77feJIJ6Av7lljw4ZGvSzbTmRuBE6pUVUFZk9TcPCSCyU9ftLxSWEh9NPSLfJW0YQPRsbzwsq05yAVbo5Vk}
       default-source-account: 现金账户
       default-destination-account: 生活开销
       default-category: 其他
@@ -90,13 +90,13 @@ lattice:
       expiry-seconds: 86400
   prompts:
     templates:
-      career.star:
+      career-star:
         description: STAR formatter for career logs
         content: |-
           你是一位技术写作者，请将以下内容转为 STAR JSON（situation, task, action, result）。
           要求：中文输出，字段完整且扼要。
           文本: {text}
-      inbox.auto-classify:
+      inbox-auto-classify:
         description: Inbox triage classifier
         content: |-
           根据输入内容，判断属于 CAREER/WEALTH/BUILD/KNOWLEDGE/INTEL/INBOX，并解释原因。
@@ -124,9 +124,10 @@ management:
 
 logging:
   level:
-    com.lattice: DEBUG
-    org.springframework.ai: DEBUG
-    org.hibernate.SQL: DEBUG
-    org.hibernate.type.descriptor.sql.BasicBinder: TRACE
+    root: INFO
+    com.lattice: INFO
+    org.springframework.ai: INFO
+    org.hibernate.SQL: INFO
+    org.hibernate.type.descriptor.sql.BasicBinder: INFO
   pattern:
-    level: "%5p [traceId=%X{traceId} spanId=%X{spanId}]"
+    level: "%5p"
