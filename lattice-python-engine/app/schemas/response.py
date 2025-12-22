@@ -21,3 +21,17 @@ class AnalysisResult(BaseModel):
     keywords: List[str] = []  # List of top keywords identified in the text.
     vector: List[float] = []  # High-dimensional semantic vector representing the document's content.
     vector_dim: int = 0  # The dimension of the semantic vector.
+
+
+class SimilarityResponse(BaseModel):
+    """
+    Represents the result of a similarity comparison between two items.
+    """
+    similarity_score: float  # The calculated cosine similarity score (between -1.0 and 1.0).
+
+
+class ObjectKeywordsResponse(BaseModel):
+    """
+    Represents the result of an object recognition task.
+    """
+    keywords: List[str]  # A list of identified keywords from the image.

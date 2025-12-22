@@ -2,8 +2,8 @@ HELP.md
 .gradle
 build/
 !gradle/wrapper/gradle-wrapper.jar
-!**/src/main/**/build/
-!**/src/test/**/build/
+!lattice-python-engine/app/main/**/build/
+!lattice-python-engine/app/test/**/build/
 
 ### STS ###
 .apt_generated
@@ -14,8 +14,8 @@ build/
 .springBeans
 .sts4-cache
 bin/
-!**/src/main/**/bin/
-!**/src/test/**/bin/
+!lattice-python-engine/app/main/**/bin/
+!lattice-python-engine/app/test/**/bin/
 
 ### IntelliJ IDEA ###
 .idea
@@ -23,8 +23,8 @@ bin/
 *.iml
 *.ipr
 out/
-!**/src/main/**/out/
-!**/src/test/**/out/
+!lattice-python-engine/app/main/**/out/
+!lattice-python-engine/app/test/**/out/
 
 ### NetBeans ###
 /nbproject/private/
@@ -55,3 +55,18 @@ logs/
 backend-run.log
 __pycache__/
 backend-app.pid
+
+
+# 忽略所有 models 目录下的具体模型内容
+**/models/vision/*
+**/models/nlp/*
+**/models/ocr/*
+
+# 明确忽略 OCR 使用的 .pth 权重文件
+*.pth
+*.pt
+*.bin
+*.safetensors
+
+# 忽略下载时的临时锁文件
+.locks/

@@ -4,12 +4,17 @@ from pdf2image import convert_from_bytes
 import jieba.analyse
 import logging
 from fastapi import UploadFile
-from app.core.model_loader import model_engine
+from app.core.model_manager import model_manager
 from app.schemas.response import AnalysisResult
 import cv2
 import numpy as np
 import docx
 import pandas as pd
+from PIL import Image
+from app.core.quality_gate import QualityGate
+
+# 性能建议：增加文件大小限制检查（例如 50MB）
+MAX_FILE_SIZE = 50 * 1024 * 1024
 
 logger = logging.getLogger("lattice.processor")
 
@@ -19,13 +24,22 @@ class DocumentProcessor:
     @staticmethod
     async def process(file: UploadFile) -> AnalysisResult:
         filename = file.filename
+
+        # 读取内容
         content = await file.read()
         file_size = len(content)
+
+        if file_size > MAX_FILE_SIZE:
+            return AnalysisResult(
+                filename=filename, file_type="unknown", status="error",
+                message="File is too large (max 50MB)"
+            )
 
         logger.info(f"Processing file: {filename} ({file_size} bytes)")
 
         text_content = ""
         file_type = "unknown"
+        analysis_result = None
 
         # 1. 解析文本
         try:
@@ -34,7 +48,45 @@ class DocumentProcessor:
                 text_content = DocumentProcessor._extract_pdf(content)
             elif filename.lower().endswith((".jpg", ".png", ".jpeg")):
                 file_type = "image"
-                text_content = DocumentProcessor._extract_image(content)
+                # --- New Vision Model Integration ---
+                try:
+                    vision_model = model_manager.get_vision_model()
+                    if vision_model:
+                        # Convert bytes to PIL Image
+                        pil_image = Image.open(io.BytesIO(content)).convert("RGB")
+
+                        # Preprocess image and get features
+                        img_tensor = vision_model.process_image(pil_image)
+                        embedding = vision_model.get_embedding(img_tensor).cpu().numpy().flatten().tolist()
+                        raw_keywords_with_confidence = vision_model.get_keywords(img_tensor)
+
+                        # Also perform OCR to get preview text
+                        ocr_text = DocumentProcessor._extract_image(content)
+
+                        # Create the initial result object (keywords list will be empty for now)
+                        analysis_result = AnalysisResult(
+                            filename=filename,
+                            file_type=file_type,
+                            status="success",
+                            char_count=len(ocr_text),
+                            preview_text=ocr_text[:200].replace("\n", " ") + "...",
+                            keywords=[], # Keywords will be set by the Quality Gate
+                            vector=embedding,
+                            vector_dim=len(embedding)
+                        )
+
+                        # Apply the quality gate to filter keywords
+                        analysis_result = QualityGate.apply(analysis_result, raw_keywords_with_confidence)
+
+                    else:
+                        # Fallback to OCR only if vision model is not available
+                        text_content = DocumentProcessor._extract_image(content)
+
+                except Exception as e:
+                    logger.error(f"Image processing with vision model failed: {e}", exc_info=True)
+                    # Fallback to OCR only on error
+                    text_content = DocumentProcessor._extract_image(content)
+                # --- End of Integration ---
             elif filename.lower().endswith(('.doc', '.docx')):
                 file_type = "word"
                 text_content = DocumentProcessor._extract_word(content)
@@ -56,6 +108,10 @@ class DocumentProcessor:
                 message=f"Parse error: {str(e)}"
             )
 
+        # If analysis was already done (e.g., for images), return the result
+        if analysis_result:
+            return analysis_result
+
         # 2. 空内容检查
         if not text_content or len(text_content.strip()) == 0:
             return AnalysisResult(
@@ -63,16 +119,18 @@ class DocumentProcessor:
                 message="No text extracted (Scanned PDF without OCR?)"
             )
 
-        # 3. AI 特征工程
+        # 3. AI Feature Engineering for text-based files
         try:
-            # A. 关键词提取 (Top 10)
+            # A. Keyword Extraction (Top 10)
             keywords = jieba.analyse.extract_tags(text_content, topK=10)
 
-            # B. 语义向量化
-            nlp = model_engine.get_nlp_model()
+            # B. Semantic Vectorization
+            nlp = model_manager.get_nlp_model()
+            if not nlp:
+                raise Exception("NLP model is not available.")
             embedding = nlp.encode(text_content).tolist()
 
-            return AnalysisResult(
+            analysis_result = AnalysisResult(
                 filename=filename,
                 file_type=file_type,
                 status="success",
@@ -82,6 +140,10 @@ class DocumentProcessor:
                 vector=embedding,
                 vector_dim=len(embedding)
             )
+
+            # Apply quality gate (can be extended for text later)
+            return QualityGate.apply(analysis_result)
+
         except Exception as e:
             logger.error(f"AI Inference error: {e}", exc_info=True)
             return AnalysisResult(
@@ -124,8 +186,6 @@ class DocumentProcessor:
         """
         使用 EasyOCR 运行识别并提取文本。
         """
-        # EasyOCR 的 readtext 直接接受 numpy 数组
-        # detail=1 返回详细信息（含置信度），detail=0 只返回文本列表
         results = ocr_engine.readtext(image_np)
 
         extracted_lines = []
@@ -143,7 +203,7 @@ class DocumentProcessor:
 
     @staticmethod
     def _extract_image(file_bytes: bytes) -> str:
-        ocr = model_engine.get_ocr_model()
+        ocr = model_manager.get_ocr_model()
         if not ocr:
             return ""
 
@@ -205,5 +265,3 @@ class DocumentProcessor:
                 continue
         # 兜底方案：强制以 utf-8 解码并忽略错误字符
         return file_bytes.decode("utf-8", errors="ignore")
-
-
