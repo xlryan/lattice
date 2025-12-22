@@ -6,7 +6,7 @@ from app.core.model_manager import model_manager
 from pydantic import BaseModel
 from fastapi import APIRouter, UploadFile, File, HTTPException, Body, Form
 from app.core.processor import DocumentProcessor
-from app.schemas.response import AnalysisResult, SimilarityResponse, ObjectKeywordsResponse
+from app.schemas.response import AnalysisResult, SimilarityResponse, ObjectKeywordsResponse, KeywordDetail
 from app.core.vision_model import calculate_similarity
 from PIL import Image
 import io
@@ -165,17 +165,53 @@ async def recognize_objects(file: UploadFile = File(...)):
         image = Image.open(io.BytesIO(content)).convert("RGB")
         tensor = vision_model.process_image(image)
 
+        # 获取原始关键词和置信度元组列表
+        # raw_keywords 格式为: [("keyword1", 0.85), ("keyword2", 0.12), ...]
         raw_keywords = vision_model.get_keywords(tensor, top_k=5)
 
-        final_keywords = [keyword for keyword, confidence in raw_keywords]
+        if not raw_keywords:
+            return ObjectKeywordsResponse(keywords_detail=[], keywords=[], top_keyword=None)
 
-        logger.info(f"Successfully recognized objects in '{file.filename}'. Keywords: {final_keywords}")
+        # 1. 转换为详细的模型列表
+        details = [
+            KeywordDetail(keyword=k, confidence=round(c, 4))
+            for k, c in raw_keywords
+        ]
 
-        return ObjectKeywordsResponse(keywords=final_keywords)
+        # 2. 提取所有关键词文本
+        all_keywords = [k for k, c in raw_keywords]
+
+        # 3. 选择最高置信度的关键词
+        # vision_model.get_keywords 内部已经按置信度从高到低排序
+        # 所以列表第一个元素就是置信度最高的
+        highest_confidence_keyword = raw_keywords[0][0]
+
+        logger.info(f"Recognition success. Top result: {highest_confidence_keyword}")
+
+        return ObjectKeywordsResponse(
+            keywords_detail=details,
+            keywords=all_keywords,
+            top_keyword=highest_confidence_keyword
+        )
 
     except Exception as e:
         logger.error(f"Failed during object recognition: {e}", exc_info=True)
-        raise HTTPException(
-            status_code=500,
-            detail=f"An internal error occurred during object recognition: {str(e)}"
-        )
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/engine/transcribe", tags=["Analysis"])
+async def transcribe_audio(file: UploadFile = File(...)):
+    """
+    专门的语音转录接口：接收音频文件，返回纯文本转录结果。
+    """
+    if not file.filename.lower().endswith(('.mp3', '.wav', '.flac', '.m4a')):
+        raise HTTPException(status_code=400, detail="Unsupported audio format.")
+
+    # 直接调用已有的音频处理逻辑
+    content = await file.read()
+    text = await DocumentProcessor._extract_audio(content)
+
+    if not text:
+        raise HTTPException(status_code=500, detail="Transcription failed.")
+
+    return {"filename": file.filename, "transcription": text}

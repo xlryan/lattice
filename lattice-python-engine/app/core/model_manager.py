@@ -1,4 +1,3 @@
-import os
 import logging
 import threading
 from typing import Optional, Dict, List
@@ -9,30 +8,32 @@ import open_clip
 from pathlib import Path
 from datetime import datetime
 from .vision_model import ProjectVisionModel
+from .audio_model import AudioModel
 from ..config import settings
 
 logger = logging.getLogger("lattice.model_manager")
 
 class ModelManager:
     """
-    全能模型管理器：支持按分类进行模型发现、动态切换和状态监控。
+    All-in-one model manager: supports model discovery, dynamic switching, and status monitoring by category.
     """
 
     def __init__(self):
         self._lock = threading.Lock()
-        self._active_models: Dict[str, any] = {"vision": None, "nlp": None, "ocr": None}
-        self._active_configs: Dict[str, dict] = {"vision": {}, "nlp": {}, "ocr": {}}
+        self._active_models: Dict[str, any] = {"vision": None, "nlp": None, "ocr": None, "audio": None}
+        self._active_configs: Dict[str, dict] = {"vision": {}, "nlp": {}, "ocr": {}, "audio": {}}
 
         self._category_paths = {
             "vision": Path(settings.MODELS_DIR) / "vision",
             "nlp": Path(settings.MODELS_DIR) / "nlp",
-            "ocr": Path(settings.MODELS_DIR) / "ocr"
+            "ocr": Path(settings.MODELS_DIR) / "ocr",
+            "audio": Path(settings.MODELS_DIR) / "audio",
         }
         for path in self._category_paths.values():
             path.mkdir(parents=True, exist_ok=True)
 
     def get_available_models(self) -> Dict[str, List[str]]:
-        """扫描所有分类目录下的可用模型"""
+        """Scans all available models in the category directories"""
         available = {}
         for category, path in self._category_paths.items():
             if path.is_dir():
@@ -58,39 +59,44 @@ class ModelManager:
                 self._load_default_model("ocr")
             return self._active_models["ocr"]
 
+    def get_audio_model(self) -> Optional[AudioModel]:
+        if not settings.USE_AUDIO:
+            return None
+        with self._lock:
+            if self._active_models["audio"] is None:
+                self._load_default_model("audio")
+            return self._active_models["audio"]
+
     def _download_default_model(self, category: str) -> bool:
         """
-        自动下载默认模型到指定目录
+        Automatically downloads the default model to the specified directory.
         """
         logger.info(f"⚡ Downloading default model for category: {category}...")
         save_dir = self._category_paths[category]
 
         try:
             if category == "vision":
-                # 下载 ViT-B-32
-                logger.info("Downloading OpenCLIP ViT-B-32...")
+                logger.info(f"Downloading {settings.DEFAULT_VISION_MODEL}...")
                 open_clip.create_model_and_transforms(
-                    'ViT-B-32',
-                    pretrained='laion2b_s34b_b79k',
+                    settings.DEFAULT_VISION_MODEL,
+                    pretrained=settings.DEFAULT_VISION_PRETRAINED,
                     cache_dir=str(save_dir)
                 )
-
             elif category == "nlp":
-                # 下载 SentenceTransformer
-                model_name = 'paraphrase-multilingual-MiniLM-L12-v2'
-                logger.info(f"Downloading NLP model {model_name}...")
-                model = SentenceTransformer(model_name)
-                # 确保保存到指定的 nlp 目录下
-                model.save(str(save_dir / model_name))
-
+                logger.info(f"Downloading NLP model {settings.NLP_MODEL_NAME}...")
+                model = SentenceTransformer(settings.NLP_MODEL_NAME)
+                model.save(str(save_dir / settings.NLP_MODEL_NAME))
             elif category == "ocr":
-                # 下载 EasyOCR
                 logger.info("Downloading EasyOCR models...")
                 easyocr.Reader(
-                    ['ch_sim', 'en'],
+                    settings.OCR_LANGUAGES,
                     gpu=torch.cuda.is_available(),
                     model_storage_directory=str(save_dir)
                 )
+            elif category == "audio":
+                logger.info(f"Downloading Audio model {settings.DEFAULT_AUDIO_MODEL}...")
+                from whisper import load_model
+                load_model(settings.DEFAULT_AUDIO_MODEL, download_root=str(save_dir))
 
             logger.info(f"✅ Successfully downloaded default {category} model.")
             return True
@@ -100,38 +106,38 @@ class ModelManager:
             return False
 
     def _load_default_model(self, category: str):
-        """加载一个分类下的默认（第一个）模型，如果不存在则尝试下载"""
+        """Loads the default (first) model in a category, or tries to download it if it doesn't exist."""
         logger.info(f"Attempting to load default model for category: {category}")
 
-        # 1. 获取现有模型
+        # 1. Get existing models
         available = self.get_available_models().get(category)
 
-        # 2. 如果没有模型，触发自动下载
+        # 2. If there are no models, trigger auto-download
         if not available:
             logger.warning(f"No models found locally for '{category}'. triggering auto-download...")
             success = self._download_default_model(category)
             if success:
-                # 下载完成后重新扫描
+                # Rescan after download
                 available = self.get_available_models().get(category)
 
         if not available:
             logger.error(f"❌ Still no models available for category '{category}' after download attempt.")
             return
 
-        # 3. 加载（通常加载列表中的第一个作为默认）
-        # 对于 OCR，available 可能是具体的模型文件，但 EasyOCR 初始化只需要目录，
-        # 所以这里的 default_model_name 对 OCR 来说可能只是为了通过 _switch_logic 的检查
+        # 3. Load (usually the first in the list is the default)
+        # For OCR, available may be specific model files, but EasyOCR initialization only needs a directory,
+        # so default_model_name here may just be to pass the _switch_logic check for OCR
         default_model_name = available[0]
 
-        # 特殊处理：如果是 OCR，EasyOCR 需要的是目录，而不是具体文件切换
-        # 但为了保持逻辑统一，我们还是传递文件名，_switch_logic 内部对 OCR 做了特殊处理
+        # Special handling: if it's OCR, EasyOCR needs a directory, not a specific file switch
+        # But to keep the logic consistent, we still pass the filename, and _switch_logic handles OCR internally
         try:
             self._switch_logic(category, default_model_name)
         except Exception as e:
             logger.error(f"Failed to load default model for {category}: {e}", exc_info=True)
 
     def switch_model(self, category: str, model_name: str) -> dict:
-        """API 入口：切换指定分类的模型"""
+        """API entry point: switch the model for the specified category"""
         try:
             with self._lock:
                 self._switch_logic(category, model_name)
@@ -144,19 +150,19 @@ class ModelManager:
             return {"status": "error", "message": f"An unexpected error occurred: {e}"}
 
     def _switch_logic(self, category: str, model_name: str):
-        """内部切换实现"""
+        """Internal switch implementation"""
         full_path = self._category_paths[category] / model_name
         actual_model_path = str(full_path)
         if full_path.is_dir():
             logger.info(f"Directory detected, searching recursively: {full_path}")
-            # 使用 rglob 进行递归搜索 (* 代表当前目录，** 代表所有子目录)
-            # 这样才能找到 snapshots 文件夹里的权重文件
+            # Use rglob for recursive search (* represents the current directory, ** represents all subdirectories)
+            # This is to find the weight files in the snapshots folder
             weight_files = list(full_path.rglob("*.bin")) + \
                            list(full_path.rglob("*.safetensors")) + \
                            list(full_path.rglob("*.pt"))
 
             if weight_files:
-                # 排序一下，优先选最大的文件（通常是权重文件）
+                # Sort them, prioritizing the largest file (usually the weight file)
                 weight_files.sort(key=lambda x: x.stat().st_size, reverse=True)
                 actual_model_path = str(weight_files[0])
                 logger.info(f"✅ Found weight file at: {actual_model_path}")
@@ -165,9 +171,9 @@ class ModelManager:
 
         if category == "vision":
             if self._active_models["vision"] is None:
-                # 确保传递的是搜寻到的具体文件路径 actual_model_path
+                # Use settings.DEFAULT_VISION_MODEL instead of hardcoding
                 self._active_models["vision"] = ProjectVisionModel(
-                    model_name='ViT-B-32',
+                    model_name=settings.DEFAULT_VISION_MODEL,
                     model_path=actual_model_path
                 )
             else:
@@ -177,15 +183,30 @@ class ModelManager:
             self._active_models["nlp"] = SentenceTransformer(str(full_path))
 
         elif category == "ocr":
-            # OCR 模型加载实际上是指定一个目录，EasyOCR 会在该目录下查找并使用模型文件
+            # OCR model loading is actually specifying a directory, and EasyOCR will find and use the model files in that directory
             self._active_models["ocr"] = easyocr.Reader(['ch_sim', 'en'], gpu=torch.cuda.is_available(), model_storage_directory=str(self._category_paths["ocr"]))
+
+        elif category == "audio":
+            audio_dir = str(self._category_paths["audio"])
+            model_id = Path(model_name).stem
+
+            if self._active_models["audio"] is None:
+                # 初始加载
+                self._active_models["audio"] = AudioModel(
+                    model_name=model_id,
+                    download_root=audio_dir
+                )
+            else:
+                self._active_models["audio"].reload_model(model_id)
 
         self._active_configs[category] = {"filename": model_name, "load_time": datetime.now().isoformat()}
         logger.info(f"Switch successful for '{category}' to '{model_name}'")
 
     def get_current_models(self) -> Dict[str, Optional[str]]:
-        """获取当前激活的模型文件名"""
+        """Gets the currently active model filenames"""
         return {key: val.get("filename") for key, val in self._active_configs.items()}
+
+
 
 
 model_manager = ModelManager()

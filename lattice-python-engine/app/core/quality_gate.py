@@ -1,75 +1,67 @@
+# --- 修改后的 app/core/quality_gate.py ---
 import logging
 from typing import List, Tuple
 from app.schemas.response import AnalysisResult
+from app.config import settings  # 导入动态配置
 
 logger = logging.getLogger("lattice.quality_gate")
 
 
 class QualityGate:
     """
-    A post-processing module to filter and enhance the results from AI models
-    before they are returned by the API.
+    后处理模块：所有过滤规则现在都通过 settings 动态获取。
     """
-
-    # --- Configuration ---
-    # Confidence threshold for object recognition. Results below this will be discarded.
-    VISION_CONFIDENCE_THRESHOLD = 0.1  # Corresponds to 10% confidence
-
-    # Blacklist of common, low-value keywords that often add noise.
-    # These will be removed regardless of their confidence score.
-    KEYWORD_BLACKLIST = {
-        'background', 'wall', 'floor', 'ceiling', 'curtain', 'plastic bag',
-        'fabric', 'textile', 'art', 'pattern', 'design'
-    }
 
     @staticmethod
     def apply(result: AnalysisResult, raw_vision_keywords: List[Tuple[str, float]] = None) -> AnalysisResult:
-        """
-        Applies a series of quality checks and filters to the analysis result.
-
-        Args:
-            result: The original AnalysisResult from the processor.
-            raw_vision_keywords: The raw output from the vision model, including confidence scores.
-
-        Returns:
-            A cleaned and filtered AnalysisResult.
-        """
+        """统一应用入口。"""
         if result.file_type == 'image' and raw_vision_keywords:
             result = QualityGate._filter_vision_keywords(result, raw_vision_keywords)
-        
-        # You can add more filtering rules for other file types here.
-        # For example:
-        # if result.file_type == 'text':
-        #     result = QualityGate._clean_text_keywords(result)
 
-        logger.debug(f"Quality gate applied. Final keywords: {result.keywords}")
+        text_types = {'pdf', 'word', 'table', 'text', 'audio'}
+        if result.file_type in text_types and result.keywords:
+            result = QualityGate._clean_text_keywords(result)
+
         return result
 
     @staticmethod
     def _filter_vision_keywords(result: AnalysisResult, raw_keywords: List[Tuple[str, float]]) -> AnalysisResult:
-        """
-        Filters keywords from vision models based on confidence and a blacklist.
-        """
+        """使用 settings.VISION_CONFIDENCE_THRESHOLD 进行过滤。"""
         final_keywords = []
         for keyword, confidence in raw_keywords:
-            # 1. Check against confidence threshold
-            if confidence < QualityGate.VISION_CONFIDENCE_THRESHOLD:
-                logger.debug(f"Dropping keyword '{keyword}' due to low confidence ({confidence:.2f})")
+            # 动态阈值检查
+            if confidence < settings.VISION_CONFIDENCE_THRESHOLD:
                 continue
 
-            # 2. Check against blacklist
-            if keyword.lower() in QualityGate.KEYWORD_BLACKLIST:
-                logger.debug(f"Dropping blacklisted keyword '{keyword}'")
+            # 动态黑名单检查
+            if keyword.lower() in settings.KEYWORD_BLACKLIST:
                 continue
-            
+
             final_keywords.append(keyword)
 
         result.keywords = final_keywords
         return result
 
-    # Example for a text-based filter (can be implemented later)
-    # @staticmethod
-    # def _clean_text_keywords(result: AnalysisResult) -> AnalysisResult:
-    #     # ... logic to clean keywords from NLP text analysis ...
-    #     return result
+    @staticmethod
+    def _clean_text_keywords(result: AnalysisResult) -> AnalysisResult:
+        """使用 settings 中的规则清洗文本关键词。"""
+        cleaned_keywords = []
+        for kw in result.keywords:
+            kw = kw.strip().lower()
 
+            # 1. 动态长度过滤
+            if len(kw) < settings.TEXT_KW_MIN_LEN or len(kw) > settings.TEXT_KW_MAX_LEN:
+                continue
+
+            # 2. 动态数字过滤
+            if settings.TEXT_KW_EXCLUDE_DIGITS and kw.isdigit():
+                continue
+
+            # 3. 动态黑名单过滤
+            if kw in settings.KEYWORD_BLACKLIST:
+                continue
+
+            cleaned_keywords.append(kw)
+
+        result.keywords = list(dict.fromkeys(cleaned_keywords))
+        return result

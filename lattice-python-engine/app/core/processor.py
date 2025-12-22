@@ -96,6 +96,9 @@ class DocumentProcessor:
             elif filename.lower().endswith(('.txt', '.md', '.py', '.json', '.xml', '.html', '.css', '.js', '.ts', '.java', '.c', '.cpp', '.go', '.rs', '.php', '.rb', '.sh', '.log', '.csv')):
                 file_type = "text"
                 text_content = DocumentProcessor._extract_text(content)
+            elif filename.lower().endswith(('.mp3', '.wav', '.flac', '.m4a')):
+                file_type = "audio"
+                text_content = await DocumentProcessor._extract_audio(content)
             else:
                 return AnalysisResult(
                     filename=filename, file_type="unsupported", status="error",
@@ -253,6 +256,35 @@ class DocumentProcessor:
         except Exception as e:
             logger.error(f"Error extracting from table file: {e}", exc_info=True)
         return text
+
+
+    @staticmethod
+    async def _extract_audio(file_bytes: bytes) -> str:
+        """Extract text from an audio file using Whisper."""
+        audio_model = model_manager.get_audio_model()
+        if not audio_model:
+            logger.error("Audio model is not available.")
+            return ""
+
+        import tempfile
+        import os
+
+        # Whisper processes files from disk, so we write to a temporary file
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".tmp") as tmp_file:
+            tmp_file.write(file_bytes)
+            tmp_file_path = tmp_file.name
+
+        try:
+            # Run transcription
+            text = audio_model.transcribe(tmp_file_path)
+            return text
+        except Exception as e:
+            logger.error(f"Error during audio transcription: {e}", exc_info=True)
+            return ""
+        finally:
+            # Clean up the temporary file
+            if os.path.exists(tmp_file_path):
+                os.remove(tmp_file_path)
 
 
     @staticmethod

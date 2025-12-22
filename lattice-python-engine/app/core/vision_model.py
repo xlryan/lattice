@@ -110,7 +110,7 @@ class ProjectVisionModel(nn.Module):
         logger.info(f"Precomputing text features for {len(self.labels)} labels...")
 
         all_features = []
-        batch_size = 128
+        batch_size = settings.VISION_BATCH_SIZE
 
         with torch.inference_mode(), torch.cuda.amp.autocast(enabled=self.device.type == 'cuda'):
             for i in range(0, len(self.labels), batch_size):

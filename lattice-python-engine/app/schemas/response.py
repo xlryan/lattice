@@ -29,9 +29,20 @@ class SimilarityResponse(BaseModel):
     """
     similarity_score: float  # The calculated cosine similarity score (between -1.0 and 1.0).
 
+class KeywordDetail(BaseModel):
+    """包含关键词及其置信度的详细信息"""
+    keyword: str
+    confidence: float
 
 class ObjectKeywordsResponse(BaseModel):
     """
-    Represents the result of an object recognition task.
+    更新后的物体识别响应模型
     """
-    keywords: List[str]  # A list of identified keywords from the image.
+    # 返回所有识别到的关键词及其置信度
+    keywords_detail: List[KeywordDetail]
+    # 专门提取最高置信度的关键词
+    top_keyword: Optional[str] = None
+    # 兼容旧版本（可选）
+    keywords: List[str] = []
+
+

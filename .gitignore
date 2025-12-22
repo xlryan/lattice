@@ -61,6 +61,7 @@ backend-app.pid
 **/models/vision/*
 **/models/nlp/*
 **/models/ocr/*
+**/models/audio/*
 
 # 明确忽略 OCR 使用的 .pth 权重文件
 *.pth

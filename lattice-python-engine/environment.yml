@@ -1,6 +1,7 @@
 name: lattice-env
 channels:
   - defaults
+  - conda-forge
 dependencies:
   - anyio=4.10.0
   - aom=3.12.1
@@ -174,7 +175,9 @@ dependencies:
   - zeromq=4.3.5
   - zlib=1.3.1
   - zstd=1.5.7
+  - ffmpeg=4.3
   - pip:
+      - openai-whisper
       - annotated-doc==0.0.4
       - annotated-types==0.7.0
       - click==8.3.1
